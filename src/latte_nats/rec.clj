@@ -73,6 +73,73 @@ for natural numbers."
     (exists [y T] ((nat-fixpoint-rel x f) n y))))
 
 (proof 'nat-recur-rel-ex-thm
+  "We proceed by induction on `n`."
+  "Base case n=0 : we want to prove (FIX zero y) is true for some y."
+
+  ;; BUG !!! If we use the following definition,
+  ;; then the variable x will be capture inside (ex-def ... (FIX ...) ...) below
+  ;;(pose FIX := (nat-fixpoint-rel x f))
+
+  (assume [R (rel nat T)
+           HR (prel/rel-elem R (nat-recur-prop-rel x f))]
+    (have <a1> (R zero x) :by (p/and-elim-left HR)))
+  (have <a> (exists [y T] ((nat-fixpoint-rel x f) zero y)) 
+        :by ((q/ex-intro (lambda [y T] ((nat-fixpoint-rel x f) zero y)) x) <a1>))
+  "Inductive case"
+  (assume [n nat
+           Hn (exists [y T] ((nat-fixpoint-rel x f) n y))]
+    (assume [y T
+             Hy ((nat-fixpoint-rel x f) n y)]
+      (assume [R (rel nat T)
+               HR (prel/rel-elem R (nat-recur-prop-rel x f))]
+        (have <b1> (R n y) :by (Hy R HR))
+        (have <b2> (==> (R n y) (R (succ n) (f y)))
+              :by ((p/and-elim-right HR) n y))
+        (have <b3> (R (succ n) (f y))
+              :by (<b2> <b1>)))
+      (have <b4> ((nat-fixpoint-rel x f) (succ n) (f y)) :by <b3>)
+      (have <b5> (exists [z T] ((nat-fixpoint-rel x f) (succ n) z))
+            :by ((q/ex-intro (lambda [z T] ((nat-fixpoint-rel x f) (succ n) z)) (f y)) <b4>)))
+
+    (have <b6> (forall [y T] (==> ((lambda [y T] ((nat-fixpoint-rel x f) n y)) y) 
+                                  (exists [z T] ((nat-fixpoint-rel x f) (succ n) z)))) :by <b5>)
+
+    (have <Hn'> (q/ex (lambda [y T] ((nat-fixpoint-rel x f) n y))) :by Hn)
+
+    (have <b7> (==> (q/ex (lambda [y T] ((nat-fixpoint-rel x f) n y))) 
+                    (forall [y T] (==> ((lambda [y T] ((nat-fixpoint-rel x f) n y)) y)
+                                       (exists [z T] ((nat-fixpoint-rel x f) (succ n) z))))
+                    (exists [z T] ((nat-fixpoint-rel x f) (succ n) z)))
+          :by (q/ex-elim-rule (lambda [y T] ((nat-fixpoint-rel x f) n y)) (exists [z T] ((nat-fixpoint-rel x f) (succ n) z))))
+
+    (have <b> (exists [z T] ((nat-fixpoint-rel x f) (succ n) z))
+          :by (<b7> <Hn'> <b6>)))
+
+  (have <c> (forall [n nat] (==> (exists [z T] ((nat-fixpoint-rel x f) n z))
+                                 (exists [z T] ((nat-fixpoint-rel x f) (succ n) z))))
+        :by <b>)
+                    
+
+
+  (have <d> (forall [n nat] 
+              (exists [z T] ((nat-fixpoint-rel x f) n z)))
+        :by ((nats/nat-induct (lambda [n nat] 
+                                (exists [z T] ((nat-fixpoint-rel x f) n z))))
+             <a> <c>))
+
+  (qed <d>))
+
+
+(comment
+
+;; IMPORTANT BUG BELOW :  Bound variables of terms, e.g. x in FIX
+;; can be captured by bound variables inside other definitions,
+;; e.g.  the x bound in the definition of ex-def...
+;; One possible solution is to use gensyms in definitions...
+;; or to be more careful while instantiating definitions
+;; (maybe this is the thing to do...)
+
+(try-proof 'nat-recur-rel-ex-thm
   (pose FIX := (nat-fixpoint-rel x f))
   "We proceed by induction on `n`."
   "Base case n=0 : we want to prove (FIX zero y) is true for some y."
@@ -96,40 +163,41 @@ for natural numbers."
       (have <b4> (FIX (succ n) (f y)) :by <b3>)
       (have <b5> (exists [z T] (FIX (succ n) z))
             :by ((q/ex-intro (lambda [z T] (FIX (succ n) z)) (f y)) <b4>)))
-
     (pose P := (lambda [y T] (FIX n y)))
-    (have <b6> (forall [y T] (==> (P y)
-                                  (exists [z T] (FIX (succ n) z))))
-          :by <b5>)
+    (pose A := (exists [z T] (FIX (succ n) z)))
+
+    (have <b6> (forall [y T] (==> (P y) A)) :by <b5>)
 
     (have <Hn'> (q/ex P) :by Hn)
 
-    (pose A := (exists [z T] (FIX (succ n) z)))
-
-    (have <b7> (==> (forall [y T] (==> (P y) A)) A)
-          :by ((q/ex-elim-rule P A) <Hn'>))
+    (have <b7> (==> (q/ex P) (forall [y T] (==> (P y) A)) A)
+          :by (q/ex-elim-rule P A))
 
 ))
 
-    (have <b> _
-          :by ((q/ex-elim-rule P
-                               (exists [z T] (FIX (succ n) z)))
-               <Hn'> <b6>))
-  ))
-))
 
-  "Now we apply the induction principle."
-  (have <c> (forall [n nat]
-              (exists [y T] (FIX n y)))
-        :by ((nats/nat-induct (lambda [n nat]
-                                (exists [y T] (FIX n y))))
-             <a> <b>))
+;;     (have <b> _
+;;           :by ((q/ex-elim-rule P
+;;                                (exists [z T] (FIX (succ n) z)))
+;;                <Hn'> <b6>))
+
+
+
+;; ))
+
+
+;;   "Now we apply the induction principle."
+;;   (have <c> (forall [n nat]
+;;               (exists [y T] (FIX n y)))
+;;         :by ((nats/nat-induct (lambda [n nat]
+;;                                 (exists [y T] (FIX n y))))
+;;              <a> <b>))
+;; )
+
+;;   (qed <c>))
+
+
+
+
 )
-
-  (qed <c>))
-
-
-
-
-    
 
