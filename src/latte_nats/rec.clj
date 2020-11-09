@@ -8,7 +8,7 @@
                                           lambda forall proof assume have
                                           pose try-proof qed]]
 
-            [latte-prelude.prop :as p :refer [and]]
+            [latte-prelude.prop :as p :refer [and not]]
             [latte-nats.core :as nats :refer [nat zero succ =]]
             [latte-prelude.equal :as eq :refer [equal]]
             [latte-prelude.quant :as q :refer [exists]]
@@ -152,4 +152,20 @@ for natural numbers."
   (assume [x1 T x2 T
            Hx1 (FIX zero x1)
            Hx2 (FIX zero x2)]
-    ))
+    (assume [Hneq (not (equal x1 x2))]
+      (pose R := (lambda [n nat]
+                   (lambda [y T]
+                     (and (FIX n y)
+                          (not (and (equal n zero) (equal y x2)))))))
+
+      (assume [Hna (and (equal zero zero) (equal x1 x2))]
+        (have <a> p/absurd :by (Hneq (p/and-elim-right Hna))))
+      (have <b> (R zero x1) :by (p/and-intro Hx1 <a>))
+
+
+;; FIX =
+;; (lambda [n nat]
+;;   (lambda [y T]
+;;     (forall [R (rel nat T)]
+;;       (==> (prel/rel-elem R (nat-recur-prop-rel x f))
+;;            (R n y)))))
