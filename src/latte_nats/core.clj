@@ -57,7 +57,7 @@
 (defaxiom zero-not-succ
   "There is not natural number \"below\" zero."
   []
-  (forall [n nat] 
+  (forall [n nat]
     (<> (succ n) zero)))
 
 (defaxiom nat-induct
@@ -87,8 +87,3 @@
     (assume [n nat]
       (have <b> (P n) :by ((nat-induct P) H0 <a> n))))
   (qed <b>))
-
-
-
-
-
