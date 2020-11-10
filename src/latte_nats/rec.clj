@@ -159,9 +159,32 @@ for natural numbers."
                           (not (and (equal n zero) (equal y x2)))))))
 
       (assume [Hna (and (equal zero zero) (equal x1 x2))]
-        (have <a> p/absurd :by (Hneq (p/and-elim-right Hna))))
-      (have <b> (R zero x1) :by (p/and-intro Hx1 <a>))
+        (have <a1> p/absurd :by (Hneq (p/and-elim-right Hna))))
+      (have <a> (R zero x1) :by (p/and-intro Hx1 <a1>))
 
+      (assume [n nat
+               y T
+               Hny (R n y)]
+        (have <b1> (FIX n y) :by (p/and-elim-left Hny))
+        (have <b> (FIX (succ n) (f y)) :by ((nat-fixpoint-succ x f) n y <b1>))
+        (assume [Hneq (and (equal (succ n) zero) (equal (f y) x2))]
+          (have <c1> (not (equal (succ n) zero))
+                :by (nats/zero-not-succ n))
+          (have <c> p/absurd :by (<c1> (p/and-elim-left Hneq))))
+        (have <d> (R (succ n) (f y)) :by (p/and-intro <b> <c>)))
+
+      (have <e> (prel/rel-elem R (nat-recur-prop-rel x1 f))
+            :by (p/and-intro <a> <d>))
+
+      (have <f> (prel/rel-elem FIX (nat-recur-prop-rel x1 f))
+            :by (p/and-intro Hx1 (nat-fixpoint-succ x f)))
+
+      (have <g> (prel/rel-elem FIX (nat-recur-prop-rel x2 f))
+            :by (p/and-intro Hx2 (nat-fixpoint-succ x f)))
+
+      ;; need to split on   (or (equal x x1) (not (equal x x1)))
+
+)))
 
 ;; FIX =
 ;; (lambda [n nat]
