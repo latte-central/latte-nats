@@ -12,6 +12,7 @@
             [latte-nats.core :as nats :refer [nat zero succ =]]
             [latte-prelude.equal :as eq :refer [equal]]
             [latte-prelude.quant :as q :refer [exists]]
+            [latte-prelude.classic :as classic]
 
             [latte-sets.rel :as rel :refer [rel]]
             [latte-sets.powerrel :as prel]
@@ -146,45 +147,118 @@ for natural numbers."
   (forall [n nat]
     (q/single (lambda [y T] ((nat-fixpoint-rel x f) n y)))))
 
-(proof 'nat-recur-rel-sing-thm
-  (pose FIX := (nat-fixpoint-rel x f))
 
+(deflemma nat-recur-rel-sing-zero-aux
+  [[?T :type] [x T] [f (==> T T)]]
+  (forall [y T]
+    (==> ((nat-fixpoint-rel x f) zero y)
+         (equal x y))))
+
+(proof 'nat-recur-rel-sing-zero-aux-lemma
+  (pose FIX := (nat-fixpoint-rel x f))
+  (assume [y T
+           Hy (FIX zero y)]
+    (assume [Hneq (not (equal x y))]
+      (pose R := (lambda [n nat]
+                   (lambda [z T]
+                     (and (FIX n z)
+                          (not (and (equal n zero) (equal z y)))))))
+
+      (have <a1> (FIX zero x) :by (nat-fixpoint-zero x f))
+      (assume [Hna (and (equal zero zero) (equal x y))]
+        (have <a2> p/absurd :by (Hneq (p/and-elim-right Hna))))
+
+      (have <a> (R zero x) :by (p/and-intro <a1> <a2>))
+
+      (assume [n nat
+               z T
+               Hny (R n z)]
+        (have <b1> (FIX n z) :by (p/and-elim-left Hny))
+        (have <b2> (FIX (succ n) (f z)) :by ((nat-fixpoint-succ x f) n z <b1>))
+        (assume [Hneq (and (equal (succ n) zero) (equal (f z) y))]
+          (have <b3> (not (equal (succ n) zero))
+                :by (nats/zero-not-succ n))
+          (have <b4> p/absurd :by (<b3> (p/and-elim-left Hneq))))
+        (have <b> (R (succ n) (f z)) :by (p/and-intro <b2> <b4>)))
+
+      (have <c> (prel/rel-elem R (nat-recur-prop-rel x f))
+            :by (p/and-intro <a> <b>))
+
+      (have <d> (R zero y) :by (Hy R <c>))
+
+      (have <e> (and (equal zero zero) (equal y y))
+            :by (p/and-intro (eq/eq-refl zero) (eq/eq-refl y)))
+
+      (have <f> p/absurd :by ((p/and-elim-right <d>) <e>)))
+
+    (have <g1> (not (not (equal x y))) :by <f>)
+    ;; Q : is classical reasoning mandatory here ?
+    (have <g> (equal x y) :by ((classic/not-not-impl (equal x y)) <g1>)))
+
+  (qed <g>))
+
+
+(deflemma nat-recur-rel-sing-succ-aux
+  [[?T :type] [x T] [f (==> T T)]]
+  (forall [n nat]
+    (forall [y fy T]
+      (==> ((nat-fixpoint-rel x f) n y)
+           ((nat-fixpoint-rel x f) (succ n) fy)
+           (equal fy (f y))))))
+
+(try-proof 'nat-recur-rel-sing-succ-aux-lemma
+  (pose FIX := (nat-fixpoint-rel x f))
+  (assume [n nat
+           y T fy T
+           Hn (FIX n y)
+           Hsn (FIX (succ n) fy)]
+    (have <a> (FIX (succ n) (f y))
+          :by (p/and-elim-right ((nat-fixpoint-elem x f) n y Hn)))
+    )
+  )
+
+
+(try-proof 'nat-recur-rel-sing-thm
+  (pose FIX := (nat-fixpoint-rel x f))
+  (pose P := (lambda [n nat] (q/single (lambda [y T] (FIX n y)))))
+
+  "We proceed by induction on n"
+  "Base case : n = 0"
   (assume [x1 T x2 T
            Hx1 (FIX zero x1)
            Hx2 (FIX zero x2)]
-    (assume [Hneq (not (equal x1 x2))]
-      (pose R := (lambda [n nat]
-                   (lambda [y T]
-                     (and (FIX n y)
-                          (not (and (equal n zero) (equal y x2)))))))
+    (have <a> (equal x x1)
+          :by ((nat-recur-rel-sing-zero-aux x f) x1 Hx1))
+    (have <b> (equal x x2)
+          :by ((nat-recur-rel-sing-zero-aux x f) x2 Hx2))
 
-      (assume [Hna (and (equal zero zero) (equal x1 x2))]
-        (have <a1> p/absurd :by (Hneq (p/and-elim-right Hna))))
-      (have <a> (R zero x1) :by (p/and-intro Hx1 <a1>))
+    (have <c> (equal x1 x2)
+          :by (eq/eq-trans (eq/eq-sym <a>) <b>)))
 
-      (assume [n nat
-               y T
-               Hny (R n y)]
-        (have <b1> (FIX n y) :by (p/and-elim-left Hny))
-        (have <b> (FIX (succ n) (f y)) :by ((nat-fixpoint-succ x f) n y <b1>))
-        (assume [Hneq (and (equal (succ n) zero) (equal (f y) x2))]
-          (have <c1> (not (equal (succ n) zero))
-                :by (nats/zero-not-succ n))
-          (have <c> p/absurd :by (<c1> (p/and-elim-left Hneq))))
-        (have <d> (R (succ n) (f y)) :by (p/and-intro <b> <c>)))
+  (have <base> (P zero) :by <c>)
 
-      (have <e> (prel/rel-elem R (nat-recur-prop-rel x1 f))
-            :by (p/and-intro <a> <d>))
+  "Induction step"
+  (assume [n nat
+           Hn (P n)]
+    "We have to show (P (succ n))"
 
-      (have <f> (prel/rel-elem FIX (nat-recur-prop-rel x1 f))
-            :by (p/and-intro Hx1 (nat-fixpoint-succ x f)))
+    (assume [fx1 T
+             fx2 T
+             Hfx1 (FIX (succ n) fx1)
+             Hfx2 (FIX (succ n) fx2)]
+      (have <a> (exists [x1 T] (FIX n x1))))
 
-      (have <g> (prel/rel-elem FIX (nat-recur-prop-rel x2 f))
-            :by (p/and-intro Hx2 (nat-fixpoint-succ x f)))
+    )
+)
 
-      ;; need to split on   (or (equal x x1) (not (equal x x1)))
+;; P(n) =
+;; (q/single (lambda [y T] (FIX n y)))
+;; = (forall [x1 x2 T]
+;;      (==> (FIX n x1)
+;;           (FIX n x2)
+;;           (equal x1 x2))))
 
-)))
+
 
 ;; FIX =
 ;; (lambda [n nat]
