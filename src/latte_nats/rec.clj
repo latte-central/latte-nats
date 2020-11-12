@@ -32,7 +32,6 @@ cf. [[nat-recur-prop]]."
   [[?T :type] [x T] [f (==> T T)]]
   (q/unique (nat-recur-prop x f)))
 
-
 (definition nat-recur-prop-rel
   "A relational variant of the recursion principle [[nat-recur-prop]]."
   [[?T :type] [x T] [f (==> T T)]]
@@ -42,12 +41,6 @@ cf. [[nat-recur-prop]]."
             (forall [y T]
               (==> (R n y)
                    (R (succ n) (f y))))))))
-
-(defthm nat-recur-rel
-  "The recursion principle for natural numbers, relational variant.
-cf. [[nat-recur-prop]]."
-  [[?T :type] [x T] [f (==> T T)]]
-  (prel/rel-unique (nat-recur-prop-rel x f)))
 
 (definition nat-fixpoint-rel
   "The relational definition of the least fixed-point
@@ -87,6 +80,15 @@ for (primitive) recursive functions on natural numbers."
       (have <b> (R (succ n) (f y)) :by ((p/and-elim-right HR) n y <a>))))
   (qed <b>))
 
+(defthm nat-fixpoint-prop
+  [[?T :type] [x T] [f (==> T T)]]
+  (forall [R (rel nat T)]
+    (==> (prel/rel-elem R (nat-recur-prop-rel x f))
+         (rel/subrel (nat-fixpoint-rel x f) R))))
+
+(proof 'nat-fixpoint-prop-thm
+  (qed (prel/rintersections-lower-bound (nat-recur-prop-rel x f))))
+
 (defthm nat-fixpoint-elem
   [[?T :type] [x T] [f (==> T T)]]
   (prel/rel-elem (nat-fixpoint-rel x f) (nat-recur-prop-rel x f)))
@@ -95,26 +97,21 @@ for (primitive) recursive functions on natural numbers."
   (qed (p/and-intro (nat-fixpoint-zero x f)
                     (nat-fixpoint-succ x f))))
 
-
-(defthm nat-fixpoint-prop
+(defthm nat-fixpoint-rel-uniq
+  "The (relational) fixpoint characterization of recursion is unique.
+This is the heart of the recursion theorem for natural integers."
   [[?T :type] [x T] [f (==> T T)]]
-  (forall [R (rel nat T)]
-        (==> (prel/rel-elem R (nat-recur-prop-rel x f))
-             (rel/subrel (nat-fixpoint-rel x f) R))))
+  (forall [n nat]
+    (q/unique (lambda [y T] ((nat-fixpoint-rel x f) n y)))))
 
-(proof 'nat-fixpoint-prop-thm
-  (qed (prel/rintersections-lower-bound (nat-recur-prop-rel x f))))
-
-
-(defthm nat-recur-rel-ex
+(defthm nat-fixpoint-rel-ex
   "The existential part of the relational recursion theorem
 for natural numbers."
   [[?T :type] [x T] [f (==> T T)]]
   (forall [n nat]
     (exists [y T] ((nat-fixpoint-rel x f) n y))))
 
-
-(proof 'nat-recur-rel-ex-thm
+(proof 'nat-fixpoint-rel-ex-thm
   "We proceed by induction on `n`."
 
   (pose FIX := (nat-fixpoint-rel x f))
@@ -146,7 +143,7 @@ for natural numbers."
 
   (qed <c>))
 
-(defthm nat-recur-rel-sing
+(defthm nat-fixpoint-rel-sing
   "The singleness part of the relational recursion theorem
 for natural numbers."
   [[?T :type] [x T] [f (==> T T)]]
@@ -154,13 +151,13 @@ for natural numbers."
     (q/single (lambda [y T] ((nat-fixpoint-rel x f) n y)))))
 
 
-(deflemma nat-recur-rel-sing-zero-aux
+(deflemma nat-fixpoint-rel-sing-zero-aux
   [[?T :type] [x T] [f (==> T T)]]
   (forall [y T]
     (==> ((nat-fixpoint-rel x f) zero y)
          (equal x y))))
 
-(proof 'nat-recur-rel-sing-zero-aux-lemma
+(proof 'nat-fixpoint-rel-sing-zero-aux-lemma
   (pose FIX := (nat-fixpoint-rel x f))
   (assume [y T
            Hy (FIX zero y)]
@@ -204,7 +201,7 @@ for natural numbers."
   (qed <g>))
 
 
-(deflemma nat-recur-rel-sing-succ-aux
+(deflemma nat-fixpoint-rel-sing-succ-aux
   [[?T :type] [x T] [f (==> T T)]]
   (forall [n nat]
     (==> (forall [y1 y2 T]
@@ -216,7 +213,7 @@ for natural numbers."
                 ((nat-fixpoint-rel x f) (succ n) fy)
                 (equal fy (f y)))))))
 
-(proof 'nat-recur-rel-sing-succ-aux-lemma
+(proof 'nat-fixpoint-rel-sing-succ-aux-lemma
   (pose FIX := (nat-fixpoint-rel x f))
   (assume [n nat
            Hind (forall [y1 y2 T]
@@ -294,7 +291,7 @@ for natural numbers."
   (qed <j>))
 
 
-(proof 'nat-recur-rel-sing-thm
+(proof 'nat-fixpoint-rel-sing-thm
   (pose FIX := (nat-fixpoint-rel x f))
   (pose P := (lambda [n nat] (q/single (lambda [y T] (FIX n y)))))
 
@@ -304,9 +301,9 @@ for natural numbers."
            Hx1 (FIX zero x1)
            Hx2 (FIX zero x2)]
     (have <a> (equal x x1)
-          :by ((nat-recur-rel-sing-zero-aux x f) x1 Hx1))
+          :by ((nat-fixpoint-rel-sing-zero-aux x f) x1 Hx1))
     (have <b> (equal x x2)
-          :by ((nat-recur-rel-sing-zero-aux x f) x2 Hx2))
+          :by ((nat-fixpoint-rel-sing-zero-aux x f) x2 Hx2))
 
     (have <c> (equal x1 x2)
           :by (eq/eq-trans (eq/eq-sym <a>) <b>)))
@@ -324,21 +321,21 @@ for natural numbers."
              Hfx2 (FIX (succ n) fx2)]
 
       (have <d1> (exists [x1 T] (FIX n x1))
-            :by ((nat-recur-rel-ex x f) n))
+            :by ((nat-fixpoint-rel-ex x f) n))
 
       (assume [x1 T
                Hx1 (FIX n x1)]
         (have <d2> (exists [x2 T] (FIX n x2))
-              :by ((nat-recur-rel-ex x f) n))
+              :by ((nat-fixpoint-rel-ex x f) n))
         (assume [x2 T
                  Hx2 (FIX n x2)]
           (have <d3> (equal x1 x2) :by (Hn x1 x2 Hx1 Hx2))
 
           (have <d4> (equal fx1 (f x1))
-                :by ((nat-recur-rel-sing-succ-aux x f) n Hn x1 fx1 Hx1 Hfx1))
+                :by ((nat-fixpoint-rel-sing-succ-aux x f) n Hn x1 fx1 Hx1 Hfx1))
 
           (have <d5> (equal fx2 (f x2))
-                :by ((nat-recur-rel-sing-succ-aux x f) n Hn x2 fx2 Hx2 Hfx2))
+                :by ((nat-fixpoint-rel-sing-succ-aux x f) n Hn x2 fx2 Hx2 Hfx2))
 
           (have <d6> (equal (f x1) (f x2)) :by (eq/eq-cong f <d3>))
 
@@ -357,3 +354,10 @@ for natural numbers."
 
 
   (qed <f>))
+
+(proof 'nat-fixpoint-rel-uniq-thm
+  (assume [n nat]
+    (have <a> _ :by ((nat-fixpoint-rel-ex x f) n))
+    (have <b> _ :by ((nat-fixpoint-rel-sing x f) n))
+    (have <c> _ :by (p/and-intro <a> <b>)))
+  (qed <c>))
