@@ -43,6 +43,12 @@ cf. [[nat-recur-prop]]."
               (==> (R n y)
                    (R (succ n) (f y))))))))
 
+(defthm nat-recur-rel
+  "The recursion principle for natural numbers, relational variant.
+cf. [[nat-recur-prop]]."
+  [[?T :type] [x T] [f (==> T T)]]
+  (prel/rel-unique (nat-recur-prop-rel x f)))
+
 (definition nat-fixpoint-rel
   "The relational definition of the least fixed-point
 for (primitive) recursive functions on natural numbers."
@@ -288,7 +294,7 @@ for natural numbers."
   (qed <j>))
 
 
-(try-proof 'nat-recur-rel-sing-thm
+(proof 'nat-recur-rel-sing-thm
   (pose FIX := (nat-fixpoint-rel x f))
   (pose P := (lambda [n nat] (q/single (lambda [y T] (FIX n y)))))
 
@@ -316,6 +322,7 @@ for natural numbers."
              fx2 T
              Hfx1 (FIX (succ n) fx1)
              Hfx2 (FIX (succ n) fx2)]
+
       (have <d1> (exists [x1 T] (FIX n x1))
             :by ((nat-recur-rel-ex x f) n))
 
@@ -327,46 +334,26 @@ for natural numbers."
                  Hx2 (FIX n x2)]
           (have <d3> (equal x1 x2) :by (Hn x1 x2 Hx1 Hx2))
 
-          (assume [Hneq (not (equal fx1 fx2))]
-            (pose R := (lambda [n nat]
-                        (lambda [y T]
-                          (and (FIX n y)
-                               (not (not (equal n zero)) (equal y fx2))))))
+          (have <d4> (equal fx1 (f x1))
+                :by ((nat-recur-rel-sing-succ-aux x f) n Hn x1 fx1 Hx1 Hfx1))
+
+          (have <d5> (equal fx2 (f x2))
+                :by ((nat-recur-rel-sing-succ-aux x f) n Hn x2 fx2 Hx2 Hfx2))
+
+          (have <d6> (equal (f x1) (f x2)) :by (eq/eq-cong f <d3>))
+
+          (have <d> (equal fx1 fx2)
+                :by (eq/eq-trans* <d4> <d6> (eq/eq-sym <d5>))))
+
+        (have <e1> (equal fx1 fx2) :by (q/ex-elim <d2> <d>)))
+
+      (have <e2> (equal fx1 fx2) :by (q/ex-elim <d1> <e1>)))
 
 
+    (have <e> (P (succ n)) :by <e2>))
+
+  (have <f> (forall [n nat] (P n))
+        :by ((nats/nat-induct P) <c> <e>))
 
 
-            ;; (R zero x)
-            ;; (R n z) => (R (succ n) (f z)))
-
-            (assume [m nat
-                     z T
-                     HR (R m z)]
-              (have <c1> (or (equal m n) (not (equal m n)))
-                    :by (classic/excluded-middle-ax (equal m n)))
-
-
-              (assume [Hor1 (equal m n)]
-                (have <c2> (R n z) :by (eq/eq-subst (lambda [$ nat] (R $ z)) Hor1 HR))
-
-
-
-          ))))))))q
-
-
-
-;; P(n) =
-;; (q/single (lambda [y T] (FIX n y)))
-;; = (forall [x1 x2 T]
-;;      (==> (FIX n x1)
-;;           (FIX n x2)
-;;           (equal x1 x2))))
-
-
-
-;; FIX =
-;; (lambda [n nat]
-;;   (lambda [y T]
-;;     (forall [R (rel nat T)]
-;;       (==> (prel/rel-elem R (nat-recur-prop-rel x f))
-;;            (R n y)))))
+  (qed <f>))
