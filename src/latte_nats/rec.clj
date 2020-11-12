@@ -8,7 +8,7 @@
                                           lambda forall proof assume have
                                           pose try-proof qed]]
 
-            [latte-prelude.prop :as p :refer [and not]]
+            [latte-prelude.prop :as p :refer [and or not]]
             [latte-nats.core :as nats :refer [nat zero succ =]]
             [latte-prelude.equal :as eq :refer [equal]]
             [latte-prelude.quant :as q :refer [exists]]
@@ -201,21 +201,91 @@ for natural numbers."
 (deflemma nat-recur-rel-sing-succ-aux
   [[?T :type] [x T] [f (==> T T)]]
   (forall [n nat]
-    (forall [y fy T]
-      (==> ((nat-fixpoint-rel x f) n y)
-           ((nat-fixpoint-rel x f) (succ n) fy)
-           (equal fy (f y))))))
+    (==> (forall [y1 y2 T]
+           (==> ((nat-fixpoint-rel x f) n y1)
+                ((nat-fixpoint-rel x f) n y2)
+                (equal y1 y2)))
+         (forall [y fy T]
+           (==> ((nat-fixpoint-rel x f) n y)
+                ((nat-fixpoint-rel x f) (succ n) fy)
+                (equal fy (f y)))))))
 
-(try-proof 'nat-recur-rel-sing-succ-aux-lemma
+(proof 'nat-recur-rel-sing-succ-aux-lemma
   (pose FIX := (nat-fixpoint-rel x f))
   (assume [n nat
+           Hind (forall [y1 y2 T]
+                  (==> (FIX n y1)
+                       (FIX n y2)
+                       (equal y1 y2)))
            y T fy T
            Hn (FIX n y)
            Hsn (FIX (succ n) fy)]
+    (have <a1> (prel/rel-elem FIX (nat-recur-prop-rel x f))
+          :by (nat-fixpoint-elem x f))
+
     (have <a> (FIX (succ n) (f y))
-          :by (p/and-elim-right ((nat-fixpoint-elem x f) n y Hn)))
-    )
-  )
+          :by ((p/and-elim-right <a1>) n y Hn))
+
+    (pose R := (lambda [m nat]
+                 (lambda [z T]
+                   (and (FIX m z)
+                        (not (and (equal (succ n) m) (equal z fy)))))))
+
+    (assume [Hneq (not (equal fy (f y)))]
+      (have <b1> (FIX zero x) :by (nat-fixpoint-zero x f))
+      (assume [Hna (and (equal (succ n) zero) (equal x fy))]
+        (have <b2> (not (equal (succ n) zero)) :by (nats/zero-not-succ n))
+        (have <b3> p/absurd :by (<b2> (p/and-elim-left Hna))))
+      (have <b> (R zero x) :by (p/and-intro <b1> <b3>))
+
+      (assume [m nat
+               z T
+               Hz (R m z)]
+
+        (have <c1> (FIX m z) :by (p/and-elim-left Hz))
+
+        (have <c2> (or (equal n m) (not (equal n m)))
+              :by (classic/excluded-middle-ax (equal n m)))
+
+        (assume [Hor1 (equal n m)]
+          (have <c3> (FIX n z) :by (eq/eq-subst (lambda [$ nat] (FIX $ z)) (eq/eq-sym Hor1) <c1>))
+          (have <c4> (FIX (succ n) (f z)) :by ((p/and-elim-right <a1>) n z <c3>))
+          (have <cc5> (equal z y) :by (Hind z y <c3> Hn))
+          (have <c5> (equal (f z) (f y)) :by (eq/eq-cong f <cc5>))
+
+          (assume [Hna (and (equal (succ n) (succ n)) (equal (f z) fy))]
+            (have <c6> (equal fy (f y)) :by (eq/eq-trans (eq/eq-sym (p/and-elim-right Hna))
+                                                         <c5>))
+            (have <c7> p/absurd :by (Hneq <c6>)))
+
+
+          (have <c8> (R (succ n) (f z))
+                :by (p/and-intro <c4> <c7>))
+
+          (have <c> (R (succ m) (f z)) :by (eq/eq-subst (lambda [$ nat] (R (succ $) (f z))) Hor1 <c8>)))
+
+        (assume [Hor2 (not (equal n m))]
+          (have <d1> (FIX (succ m) (f z)) :by ((p/and-elim-right <a1>) m z <c1>))
+          (assume [Hna (and (equal (succ n) (succ m)) (equal (f z) fy))]
+            (have <d2> (equal n m) :by (nats/succ-injective n m (p/and-elim-left Hna)))
+            (have <d3> p/absurd :by (Hor2 <d2>)))
+          (have <d> (R (succ m) (f z)) :by (p/and-intro <d1> <d3>)))
+
+        (have <e> (R (succ m) (f z)) :by (p/or-elim <c2> <c> <d>)))
+
+      (have <f> (prel/rel-elem R (nat-recur-prop-rel x f))
+            :by (p/and-intro <b> <e>))
+
+      (have <g> (R (succ n) fy) :by (Hsn R <f>))
+
+      (have <h> (and (equal (succ n) (succ n)) (equal fy fy))
+            :by (p/and-intro (eq/eq-refl (succ n)) (eq/eq-refl fy)))
+
+      (have <i> p/absurd :by ((p/and-elim-right <g>) <h>)))
+
+    (have <j> (equal fy (f y)) :by ((classic/not-not-impl (equal fy (f y))) <i>)))
+
+  (qed <j>))
 
 
 (try-proof 'nat-recur-rel-sing-thm
@@ -246,10 +316,44 @@ for natural numbers."
              fx2 T
              Hfx1 (FIX (succ n) fx1)
              Hfx2 (FIX (succ n) fx2)]
-      (have <a> (exists [x1 T] (FIX n x1))))
+      (have <d1> (exists [x1 T] (FIX n x1))
+            :by ((nat-recur-rel-ex x f) n))
 
-    )
-)
+      (assume [x1 T
+               Hx1 (FIX n x1)]
+        (have <d2> (exists [x2 T] (FIX n x2))
+              :by ((nat-recur-rel-ex x f) n))
+        (assume [x2 T
+                 Hx2 (FIX n x2)]
+          (have <d3> (equal x1 x2) :by (Hn x1 x2 Hx1 Hx2))
+
+          (assume [Hneq (not (equal fx1 fx2))]
+            (pose R := (lambda [n nat]
+                        (lambda [y T]
+                          (and (FIX n y)
+                               (not (not (equal n zero)) (equal y fx2))))))
+
+
+
+
+            ;; (R zero x)
+            ;; (R n z) => (R (succ n) (f z)))
+
+            (assume [m nat
+                     z T
+                     HR (R m z)]
+              (have <c1> (or (equal m n) (not (equal m n)))
+                    :by (classic/excluded-middle-ax (equal m n)))
+
+
+              (assume [Hor1 (equal m n)]
+                (have <c2> (R n z) :by (eq/eq-subst (lambda [$ nat] (R $ z)) Hor1 HR))
+
+
+
+          ))))))))q
+
+
 
 ;; P(n) =
 ;; (q/single (lambda [y T] (FIX n y)))
