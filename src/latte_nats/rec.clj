@@ -1,7 +1,7 @@
 (ns latte-nats.rec
   "The recursion theorem for natural numbers."
 
-  (:refer-clojure :exclude [and or not int =])
+  (:refer-clojure :exclude [and or not int = set])
 
   (:require [latte.core :as latte :refer [defaxiom defthm definition
                                           deflemma
@@ -14,8 +14,10 @@
             [latte-prelude.quant :as q :refer [exists]]
             [latte-prelude.classic :as classic]
 
+            [latte-sets.set :as set :refer [elem]]
             [latte-sets.rel :as rel :refer [rel]]
             [latte-sets.powerrel :as prel]
+            [latte-sets.pfun :as pfun]
             ))
 
 (definition nat-recur-prop
@@ -361,3 +363,29 @@ for natural numbers."
     (have <b> _ :by ((nat-fixpoint-rel-sing x f) n))
     (have <c> _ :by (p/and-intro <a> <b>)))
   (qed <c>))
+
+(defthm nat-fixpoint-pfun
+  [[?T :type]  [x T] [f (==> T T)]]
+  (pfun/pfun (nat-fixpoint-rel x f) (set/fullset nat)))
+
+(proof 'nat-fixpoint-pfun-thm
+  (pose FIX := (nat-fixpoint-rel x f))
+  (assume [n nat
+           Hn (elem n (set/fullset nat))
+           x1 T x2 T
+           Hx1 (FIX n x1)
+           Hx2 (FIX n x2)]
+    (have <a> (equal x1 x2)
+          :by ((nat-fixpoint-rel-sing x f) n x1 x2 Hx1 Hx2)))
+  (qed <a>))
+
+(defthm nat-fixpoint-ptotal
+  [[?T :type]  [x T] [f (==> T T)]]
+  (pfun/ptotal (nat-fixpoint-rel x f) (set/fullset nat)))
+
+(proof 'nat-fixpoint-ptotal-thm
+  (assume [n nat
+           Hn (elem n (set/fullset nat))]
+    (have <a> (exists [y T] ((nat-fixpoint-rel x f) n y))
+          :by ((nat-fixpoint-rel-ex x f) n)))
+  (qed <a>))
