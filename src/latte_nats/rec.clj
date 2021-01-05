@@ -9,15 +9,16 @@
                                           pose try-proof qed]]
 
             [latte-prelude.prop :as p :refer [and or not]]
-            [latte-nats.core :as nats :refer [nat zero succ =]]
             [latte-prelude.equal :as eq :refer [equal]]
             [latte-prelude.quant :as q :refer [exists]]
             [latte-prelude.classic :as classic]
+            [latte-prelude.fun :as fun]
 
             [latte-sets.set :as set :refer [elem]]
             [latte-sets.rel :as rel :refer [rel]]
             [latte-sets.powerrel :as prel]
-            [latte-sets.pfun :as pfun]
+
+            [latte-nats.core :as nats :refer [nat zero succ =]]
             ))
 
 (definition nat-recur-prop
@@ -43,6 +44,48 @@ cf. [[nat-recur-prop]]."
             (forall [y T]
               (==> (R n y)
                    (R (succ n) (f y))))))))
+
+(defthm nat-recur-prop-prop-rel
+  [[?T :type] [x T] [f (==> T T)] [g (==> nat T)]]
+  (==> ((nat-recur-prop x f) g)
+       ((nat-recur-prop-rel x f) (rel/funrel g))))
+
+(proof 'nat-recur-prop-prop-rel-thm
+  (assume [H _]
+    (pose R := (rel/funrel g))
+    "First conjunct"
+    (have <a1> (equal (g zero) x) 
+          :by (p/and-elim-left H))
+    (have <a> (R zero x) :by <a1>)
+    "Second conjunct"
+    (assume [n nat
+             y T
+             Hy (R n y)]
+      (have <b1> (equal (g n) y) :by Hy)
+      (have <b2> (equal (g (succ n)) (f (g n))) 
+            :by ((p/and-elim-right H) n))
+      (have <b3> (R (succ n) (f (g n))) :by <b2>)
+      (have <b> (R (succ n) (f y)) 
+            :by (eq/eq-subst (lambda [$ T] (R (succ n) (f $))) <b1> <b3>)))
+    (have <c> _ :by (p/and-intro <a> <b>)))
+  (qed <c>))
+
+(defthm nat-recur-prop-rel-prop
+  [[?T :type] [x T] [f (==> T T)] [g (==> nat T)]]
+  (==> ((nat-recur-prop-rel x f) (rel/funrel g))
+       ((nat-recur-prop x f) g)))
+
+(proof 'nat-recur-prop-rel-prop-thm
+  (assume [H _]
+    "First conjunct"
+    (have <a> (equal (g zero) x) :by (p/and-elim-left H))
+    "Second conjunct"
+    (assume [n nat]
+      (have <b1> (equal (g n) (g n)) :by (eq/eq-refl (g n)))
+      (have <b> (equal (g (succ n)) (f (g n)))
+            :by ((p/and-elim-right H) n (g n) <b1>)))
+    (have <c> _ :by (p/and-intro <a> <b>)))
+  (qed <c>))
 
 (definition nat-fixpoint-rel
   "The relational definition of the least fixed-point
@@ -364,28 +407,107 @@ for natural numbers."
     (have <c> _ :by (p/and-intro <a> <b>)))
   (qed <c>))
 
-(defthm nat-fixpoint-pfun
-  [[?T :type]  [x T] [f (==> T T)]]
-  (pfun/pfun (nat-fixpoint-rel x f) (set/fullset nat)))
 
-(proof 'nat-fixpoint-pfun-thm
-  (pose FIX := (nat-fixpoint-rel x f))
-  (assume [n nat
-           Hn (elem n (set/fullset nat))
-           x1 T x2 T
-           Hx1 (FIX n x1)
-           Hx2 (FIX n x2)]
-    (have <a> (equal x1 x2)
-          :by ((nat-fixpoint-rel-sing x f) n x1 x2 Hx1 Hx2)))
-  (qed <a>))
+(defthm nat-fixpoint-functional
+  [[?T :type] [x T] [f (==> T T)]]
+  (rel/functional (nat-fixpoint-rel x f)))
 
-(defthm nat-fixpoint-ptotal
-  [[?T :type]  [x T] [f (==> T T)]]
-  (pfun/ptotal (nat-fixpoint-rel x f) (set/fullset nat)))
+(proof 'nat-fixpoint-functional-thm
+  (qed (nat-fixpoint-rel-uniq x f)))
 
-(proof 'nat-fixpoint-ptotal-thm
-  (assume [n nat
-           Hn (elem n (set/fullset nat))]
-    (have <a> (exists [y T] ((nat-fixpoint-rel x f) n y))
-          :by ((nat-fixpoint-rel-ex x f) n)))
-  (qed <a>))
+(definition nat-fixpoint-fun
+  [[?T :type] [x T] [f (==> T T)]]
+  (rel/relfun (nat-fixpoint-rel x f) (nat-fixpoint-functional x f)))
+
+
+(defthm nat-recur-rel-prop-rel-prop
+  [[?T :type] [x T] [f (==> T T)] [R (rel nat T)] [func (rel/functional R)]]
+  (==> ((nat-recur-prop-rel x f) R)
+       ((nat-recur-prop x f) (rel/relfun R func))))
+
+(proof 'nat-recur-rel-prop-rel-prop-thm
+  (assume [H _]
+    (pose g := (rel/relfun R func))
+    "First conjunct"
+    (have <a1> (R zero x) :by (p/and-elim-left H))
+    (have <a> (equal (g zero) x)
+          :by ((rel/relfun-img R func) zero x <a1>))
+    "Second conjunct"
+    (assume [n nat]
+      (have <b1> (R n (g n)) :by ((rel/relfun-img-prop R func) n))
+      (have <b2> (R (succ n) (f (g n)))
+            :by ((p/and-elim-right H) n (g n) <b1>))
+      (have <b> (equal (g (succ n)) (f (g n)))
+            :by ((rel/relfun-img R func) (succ n) (f (g n)) <b2>)))
+    (have <c> _ :by (p/and-intro <a> <b>)))
+  (qed <c>))
+
+
+(defthm nat-fixpoint-fun-prop
+  [[?T :type] [x T] [f (==> T T)]]
+  ((nat-recur-prop x f) (nat-fixpoint-fun x f)))
+
+(proof 'nat-fixpoint-fun-prop-thm
+  (pose g := (nat-fixpoint-fun x f))
+  (pose R := (nat-fixpoint-rel x f))
+  (have <a> ((nat-recur-prop-rel x f) R) :by (nat-fixpoint-elem x f))
+  (have <b> ((nat-recur-prop x f) g) 
+        :by ((nat-recur-rel-prop-rel-prop x f
+                                          (nat-fixpoint-rel x f)
+                                          (nat-fixpoint-functional x f))
+             <a>))
+  (qed <b>))
+
+(defthm nat-rec-ex
+  [[?T :type] [x T] [f (==> T T)]]
+  (exists [g (==> nat T)]
+    ((nat-recur-prop x f) g)))
+
+(proof 'nat-rec-ex-thm
+  (qed ((q/ex-intro (lambda [g (==> nat T)]
+                      ((nat-recur-prop x f) g))
+                    (nat-fixpoint-fun x f))
+        (nat-fixpoint-fun-prop x f))))
+
+(defthm nat-rec-single
+  [[?T :type] [x T] [f (==> T T)]]
+  (forall [g1 g2 (==> nat T)]
+    (==> ((nat-recur-prop x f) g1)
+         ((nat-recur-prop x f) g2)
+         (equal g1 g2))))
+
+(proof 'nat-rec-single-thm
+  (assume [g1 _ g2 _
+           Hg1 _ Hg2 _]
+    "We proceed by induction"
+    "Case zero"
+    (have <a1> (equal (g1 zero) x) :by (p/and-elim-left Hg1))
+    (have <a2> (equal (g2 zero) x) :by (p/and-elim-left Hg2))
+    (have <a> (equal (g1 zero) (g2 zero)) :by (eq/eq-trans <a1> (eq/eq-sym <a2>)))
+    "Case successor"
+    (assume [n nat
+             Hn (equal (g1 n) (g2 n))]
+      (have <b1> (equal (g1 (succ n)) (f (g1 n)))
+            :by ((p/and-elim-right Hg1) n))
+      (have <b2> (equal (g1 (succ n)) (f (g2 n)))
+            :by (eq/eq-subst (lambda [$ T]
+                               (equal (g1 (succ n)) (f $)))
+                             Hn <b1>))
+      (have <b3> (equal (g2 (succ n)) (f (g2 n)))
+            :by ((p/and-elim-right Hg2) n))
+      (have <b> (equal (g1 (succ n)) (g2 (succ n)))
+            :by (eq/eq-trans <b2> (eq/eq-sym <b3>))))
+    "We apply the induction principle"
+    (have <c> (forall [n nat] (equal (g1 n) (g2 n)))
+          :by ((nats/nat-induct (lambda [n nat] (equal (g1 n) (g2 n))))
+               <a> <b>))
+    "And now we use functional extensionality"
+    (have <d> (equal g1 g2)
+          :by ((fun/functional-extensionality g1 g2) <c>)))
+  (qed <d>))
+
+
+;;; Made it, yay !
+(proof 'nat-recur-thm
+  (qed (p/and-intro (nat-rec-ex x f)
+                    (nat-rec-single x f))))
