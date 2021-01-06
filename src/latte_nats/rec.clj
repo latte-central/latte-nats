@@ -1,5 +1,6 @@
 (ns latte-nats.rec
-  "The recursion theorem for natural numbers."
+  "The recursion theorem for natural numbers,
+ together with its complete (somewhat non-trivial) formal proof."
 
   (:refer-clojure :exclude [and or not int = set])
 
@@ -92,30 +93,37 @@ cf. [[nat-recur-prop]]."
 for (primitive) recursive functions on natural numbers."
   [[?T :type] [x T] [f (==> T T)]]
   (prel/rintersections (nat-recur-prop-rel x f)))
+
+;; The above in expanded form: 
 ;; (lambda [n nat]
 ;;   (lambda [y T]
 ;;     (forall [R (rel nat T)]
 ;;       (==> (prel/rel-elem R (nat-recur-prop-rel x f))
 ;;            (R n y)))))
 
-(defthm nat-fixpoint-zero
+(defthm nat-fixpoint-elem
+  "The least (relational) fixpoint is ... least."
+  [[?T :type] [x T] [f (==> T T)]]
+  (prel/rel-elem (nat-fixpoint-rel x f) (nat-recur-prop-rel x f)))
+
+(deflemma nat-fixpoint-zero
   [[?T :type] [x T] [f (==> T T)]]
   ((nat-fixpoint-rel x f) zero x))
 
-(proof 'nat-fixpoint-zero-thm
+(proof 'nat-fixpoint-zero-lemma
   (assume [R (rel nat T)
            HR (prel/rel-elem R (nat-recur-prop-rel x f))]
     (have <a> (R zero x) :by (p/and-elim-left HR)))
   (qed <a>))
 
-(defthm nat-fixpoint-succ
+(deflemma nat-fixpoint-succ
   [[?T :type] [x T] [f (==> T T)]]
   (forall [n nat]
     (forall [y T]
       (==> ((nat-fixpoint-rel x f) n y)
            ((nat-fixpoint-rel x f) (succ n) (f y))))))
 
-(proof 'nat-fixpoint-succ-thm
+(proof 'nat-fixpoint-succ-lemma
   (assume [n nat
            y T
            Hny ((nat-fixpoint-rel x f) n y)]
@@ -125,7 +133,13 @@ for (primitive) recursive functions on natural numbers."
       (have <b> (R (succ n) (f y)) :by ((p/and-elim-right HR) n y <a>))))
   (qed <b>))
 
+
+(proof 'nat-fixpoint-elem-thm
+  (qed (p/and-intro (nat-fixpoint-zero x f)
+                    (nat-fixpoint-succ x f))))
+
 (defthm nat-fixpoint-prop
+  "The main property of the least (relational) fixpoint [[nat-fixpoint-rel]]."
   [[?T :type] [x T] [f (==> T T)]]
   (forall [R (rel nat T)]
     (==> (prel/rel-elem R (nat-recur-prop-rel x f))
@@ -134,29 +148,22 @@ for (primitive) recursive functions on natural numbers."
 (proof 'nat-fixpoint-prop-thm
   (qed (prel/rintersections-lower-bound (nat-recur-prop-rel x f))))
 
-(defthm nat-fixpoint-elem
-  [[?T :type] [x T] [f (==> T T)]]
-  (prel/rel-elem (nat-fixpoint-rel x f) (nat-recur-prop-rel x f)))
 
-(proof 'nat-fixpoint-elem-thm
-  (qed (p/and-intro (nat-fixpoint-zero x f)
-                    (nat-fixpoint-succ x f))))
-
-(defthm nat-fixpoint-rel-uniq
+(deflemma nat-fixpoint-rel-uniq
   "The (relational) fixpoint characterization of recursion is unique.
-This is the heart of the recursion theorem for natural integers."
+This is the core of the proof for the recursion theorem for natural integers."
   [[?T :type] [x T] [f (==> T T)]]
   (forall [n nat]
     (q/unique (lambda [y T] ((nat-fixpoint-rel x f) n y)))))
 
-(defthm nat-fixpoint-rel-ex
+(deflemma nat-fixpoint-rel-ex
   "The existential part of the relational recursion theorem
 for natural numbers."
   [[?T :type] [x T] [f (==> T T)]]
   (forall [n nat]
     (exists [y T] ((nat-fixpoint-rel x f) n y))))
 
-(proof 'nat-fixpoint-rel-ex-thm
+(proof 'nat-fixpoint-rel-ex-lemma
   "We proceed by induction on `n`."
 
   (pose FIX := (nat-fixpoint-rel x f))
@@ -188,7 +195,7 @@ for natural numbers."
 
   (qed <c>))
 
-(defthm nat-fixpoint-rel-sing
+(deflemma nat-fixpoint-rel-sing
   "The singleness part of the relational recursion theorem
 for natural numbers."
   [[?T :type] [x T] [f (==> T T)]]
@@ -336,7 +343,7 @@ for natural numbers."
   (qed <j>))
 
 
-(proof 'nat-fixpoint-rel-sing-thm
+(proof 'nat-fixpoint-rel-sing-lemma
   (pose FIX := (nat-fixpoint-rel x f))
   (pose P := (lambda [n nat] (q/single (lambda [y T] (FIX n y)))))
 
@@ -400,7 +407,7 @@ for natural numbers."
 
   (qed <f>))
 
-(proof 'nat-fixpoint-rel-uniq-thm
+(proof 'nat-fixpoint-rel-uniq-lemma
   (assume [n nat]
     (have <a> _ :by ((nat-fixpoint-rel-ex x f) n))
     (have <b> _ :by ((nat-fixpoint-rel-sing x f) n))
@@ -409,6 +416,8 @@ for natural numbers."
 
 
 (defthm nat-fixpoint-functional
+  "The least (relational) fixpoint is functional, which is one important
+ ingredient of the proof of the recursion theorem."
   [[?T :type] [x T] [f (==> T T)]]
   (rel/functional (nat-fixpoint-rel x f)))
 
@@ -416,16 +425,16 @@ for natural numbers."
   (qed (nat-fixpoint-rel-uniq x f)))
 
 (definition nat-fixpoint-fun
+  "The (type-theoretic) function corresponding to the least (relational) fixpoint."
   [[?T :type] [x T] [f (==> T T)]]
   (rel/relfun (nat-fixpoint-rel x f) (nat-fixpoint-functional x f)))
 
-
-(defthm nat-recur-rel-prop-rel-prop
+(deflemma nat-recur-rel-prop-rel-prop
   [[?T :type] [x T] [f (==> T T)] [R (rel nat T)] [func (rel/functional R)]]
   (==> ((nat-recur-prop-rel x f) R)
        ((nat-recur-prop x f) (rel/relfun R func))))
 
-(proof 'nat-recur-rel-prop-rel-prop-thm
+(proof 'nat-recur-rel-prop-rel-prop-lemma
   (assume [H _]
     (pose g := (rel/relfun R func))
     "First conjunct"
@@ -444,6 +453,7 @@ for natural numbers."
 
 
 (defthm nat-fixpoint-fun-prop
+  "The least relational fixpoint as a total function satisfies the recursion theorem."
   [[?T :type] [x T] [f (==> T T)]]
   ((nat-recur-prop x f) (nat-fixpoint-fun x f)))
 
@@ -458,25 +468,25 @@ for natural numbers."
              <a>))
   (qed <b>))
 
-(defthm nat-rec-ex
+(deflemma nat-rec-ex
   [[?T :type] [x T] [f (==> T T)]]
   (exists [g (==> nat T)]
     ((nat-recur-prop x f) g)))
 
-(proof 'nat-rec-ex-thm
+(proof 'nat-rec-ex-lemma
   (qed ((q/ex-intro (lambda [g (==> nat T)]
                       ((nat-recur-prop x f) g))
                     (nat-fixpoint-fun x f))
         (nat-fixpoint-fun-prop x f))))
 
-(defthm nat-rec-single
+(deflemma nat-rec-single
   [[?T :type] [x T] [f (==> T T)]]
   (forall [g1 g2 (==> nat T)]
     (==> ((nat-recur-prop x f) g1)
          ((nat-recur-prop x f) g2)
          (equal g1 g2))))
 
-(proof 'nat-rec-single-thm
+(proof 'nat-rec-single-lemma
   (assume [g1 _ g2 _
            Hg1 _ Hg2 _]
     "We proceed by induction"
@@ -507,7 +517,7 @@ for natural numbers."
   (qed <d>))
 
 
-;;; Made it, yay !
+;;; Made it, yaye !
 (proof 'nat-recur-thm
   (qed (p/and-intro (nat-rec-ex x f)
                     (nat-rec-single x f))))
