@@ -226,6 +226,8 @@
 
 
 (defthm int-to-nat
+  "Any property `P` of positive integers is also a property
+of natural numbers."
   [P (==> nat :type)]
   (==> (forall [n int] (P (natset->nat n)))
        (forall [n nat] (P n))))
@@ -262,3 +264,23 @@
 ;;; TODO : the converse  nat-to-int  (but it's less useful because
 ;;; the objective is mostly to port proofs for the integer developments,
 ;;; but it could be useful to populate natset later on...)
+
+
+(definition natset-fun
+  "Conversion of a function `f` on integers to a function on natural numbers."
+  [f (==> int int)]
+  (lambda [n nat]
+    (natset->nat (f (nat->natset n)))))
+
+(definition natset-prop
+  "Convertion of a property `P` on integers to a property on natural numbers."
+  [P (==> int :type)]
+  (lambda [n nat]
+    (P (nat->natset n))))
+
+(definition natset-fun2
+  "Conversion of a binary function `f` on integers to a function on natural numbers."
+  [f (==> int int int)]
+  (lambda [m n nat]
+    (natset->nat (f (nat->natset m) (nat->natset n)))))
+
