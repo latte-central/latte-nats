@@ -18,13 +18,12 @@
             
             [latte-nats.core :as nats :refer [nat = zero succ]]
             [latte-nats.rec :as rec]
-            [latte-nats.natint :as natint :refer [nat->natset]]
+            [latte-nats.natint :as natint :refer [nat->natset natset->nat]]
 
             [latte-integers.int :as int :refer [int]]
             [latte-integers.plus :as ip]
 
             ))
-
 
 (definition add-prop
   "The property of the addition of `m` to an natural integer."
@@ -198,17 +197,127 @@
 
 (defthm intplus-plus
   []
-  (forall-in [m intnat/nat]
-    (forall-in [n intnat/nat]
-      (= (natset->nat (ip/+ m n))
-         (+ (natset->nat m) (natset->nat n)))))
+  (forall [m n nat]
+    (int/= (ip/+ (nat->natset m) 
+                 (nat->natset n))
+           (nat->natset (+ m n)))))
+
+(proof 'intplus-plus
+  "By induction on n"
+  (assume [m nat]
+    (pose P := (lambda [k nat] (int/= (ip/+ (nat->natset m)
+                                            (nat->natset k))
+                                      (nat->natset (+ m k)))))
+    "Case zero"
+    (have <a1> (int/= (nat->natset zero) int/zero)
+          :by (natint/nat-natset-zero))
+    (have <a2> (int/= (ip/+ (nat->natset m)
+                            (nat->natset zero))
+                      (ip/+ (nat->natset m) int/zero))
+          :by (eq/eq-subst (lambda [$ int]
+                             (int/= (ip/+ (nat->natset m) (nat->natset zero))
+                                    (ip/+ (nat->natset m) $)))
+                           <a1>
+                           (eq/eq-refl (ip/+ (nat->natset m) (nat->natset zero)))))
+    (have <a3> (int/= (ip/+ (nat->natset m) int/zero)
+                      (nat->natset m))
+          :by (ip/plus-zero (nat->natset m)))
+    (have <a4> (= m (+ m zero)) :by (eq/eq-sym (plus-zero m)))
+    (have <a5> (int/= (nat->natset m)
+                      (nat->natset (+ m zero)))
+          :by (eq/eq-subst (lambda [$ nat]
+                             (int/= (nat->natset m)
+                                    (nat->natset $)))
+                           <a4> (eq/eq-refl (nat->natset m))))
+    (have <a> (P zero)
+          :by (eq/eq-trans* <a2> <a3> <a5>))
+    "Case succ"
+    (assume [n nat
+             Hn (P n)]
+      "We must prove (P (succ n))"
+      "First, a certain number of equalities ..."
+      (have <b1> (int/= (nat->natset (succ n))
+                        (int/succ (nat->natset n)))
+            :by (natint/nat-natset-succ n))
+      (have <b2> (int/= (ip/+ (nat->natset m) (int/succ (nat->natset n)))
+                        (int/succ (ip/+ (nat->natset m) (nat->natset n))))
+            :by (ip/plus-succ (nat->natset m) (nat->natset n)))
+      (have <b3> (int/= (ip/+ (nat->natset m) (nat->natset n))
+                        (nat->natset (+ m n)))
+            :by Hn)
+      (have <b4> (int/= (int/succ (nat->natset (+ m n)))
+                        (nat->natset (succ (+ m n))))
+            :by (eq/eq-sym (natint/nat-natset-succ (+ m n))))
+      (have <b5> (= (succ (+ m n)) (+ m (succ n)))
+            :by (eq/eq-sym (plus-succ m n)))
+      "And now, we reconstruct our goal."
+      (have <c1> (int/= (ip/+ (nat->natset m) (nat->natset (succ n)))
+                        (int/succ (ip/+ (nat->natset m) (nat->natset n))))
+            :by (eq/eq-subst (lambda [$ int]
+                               (int/= (ip/+ (nat->natset m) $)
+                                      (int/succ (ip/+ (nat->natset m) (nat->natset n)))))
+                             (eq/eq-sym <b1>) <b2>))
+      (have <c2> (int/= (int/succ (ip/+ (nat->natset m) (nat->natset n)))
+                        (int/succ (nat->natset (+ m n))))
+            :by (eq/eq-cong int/succ <b3>))
+      (have <c3> (int/= (int/succ (nat->natset (+ m n)))
+                        (nat->natset (+ m (succ n))))
+            :by (eq/eq-subst (lambda [$ nat]
+                               (int/= (int/succ (nat->natset (+ m n)))
+                                      (nat->natset $)))
+                             <b5> <b4>))
+      (have <c> (P (succ n))
+            :by (eq/eq-trans* <c1> <c2> <c3>)))
+    "Induction principle"
+    (have <d> _ ;;; XXX : (forall [n nat] (P n)) 
+                ;;; instead of underscore does not work (but should ?)
+          :by ((nats/nat-induct P) <a> <c>)))
+  (qed <d>))
 
 (defthm plus-assoc
   [[n nat] [m nat] [p nat]]
   (= (+ n (+ m p))
      (+ (+ n m) p)))
 
+;;; XXX: may the following be done in a simpler way  (i.e. reusing results from
+;;; the integer development)
 (proof 'plus-assoc
   (have <a> (int/= (ip/+ (nat->natset n) (ip/+ (nat->natset m) (nat->natset p)))
                    (ip/+ (ip/+ (nat->natset n) (nat->natset m)) (nat->natset p)))
-        :by (ip/plus-assoc (nat->natset n) (nat->natset m) (nat->natset p))))
+        :by (ip/plus-assoc (nat->natset n) (nat->natset m) (nat->natset p)))
+  "We handle the first operand of equality"
+  (have <b1> (int/= (ip/+ (nat->natset n) (ip/+ (nat->natset m) (nat->natset p)))
+                    (ip/+ (nat->natset n) (nat->natset (+ m p))))
+        :by (eq/eq-cong (lambda [$ int]
+                           (ip/+ (nat->natset n) $))
+                        (intplus-plus m p)))
+  (have <b2> (int/= (ip/+ (nat->natset n) (nat->natset (+ m p)))
+                    (nat->natset (+ n (+ m p))))
+        :by (intplus-plus n (+ m p)))
+  (have <b3> _ :by (eq/eq-trans <b1> <b2>))
+  (have <b> (int/= (nat->natset (+ n (+ m p)))
+                   (ip/+ (ip/+ (nat->natset n) (nat->natset m)) (nat->natset p)))
+        :by (eq/eq-subst (lambda [$ int]
+                           (int/= $
+                                  (ip/+ (ip/+ (nat->natset n) (nat->natset m)) (nat->natset p)))) <b3> <a>))
+
+  "And now the second operand"
+  (have <c1> (int/= (ip/+ (ip/+ (nat->natset n) (nat->natset m)) (nat->natset p))
+                    (ip/+ (nat->natset (+ n m)) (nat->natset p)))
+        :by (eq/eq-cong (lambda [$ int]
+                          (ip/+ $ (nat->natset p)))
+                        (intplus-plus n m)))
+  (have <c2> (int/= (ip/+ (nat->natset (+ n m)) (nat->natset p))
+                   (nat->natset (+ (+ n m) p)))
+        :by (intplus-plus (+ n m) p))
+  (have <c3> _ :by (eq/eq-trans <c1> <c2>))
+
+  "And we join the two parts"
+  (have <d> (int/= (nat->natset (+ n (+ m p)))
+                   (nat->natset (+ (+ n m) p)))
+        :by (eq/eq-trans <b> <c3>))
+  "And finally, we conclude thanks to injectivity"
+  (qed ((natint/nat-natset-injective (+ n (+ m p)) (+ (+ n m) p))
+        <d>)))
+
+
