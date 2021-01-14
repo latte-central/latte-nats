@@ -1,4 +1,4 @@
-(defproject latte-nats "0.3.0-SNAPSHOT"
+(defproject latte-nats "0.4.0-SNAPSHOT"
   :description "A formalization of natural numbers in LaTTe."
   :url "https://github.com/latte-central/latte-nats.git"
   :license {:name "MIT Licence"
