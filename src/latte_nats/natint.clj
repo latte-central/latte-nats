@@ -131,9 +131,7 @@
     (have <b2> (elem (int/succ (nat->natset n)) intnat/nat)
           :by ((intnat/nat-succ (nat->natset n))
                Hn))
-    (have <b> (P (succ n)) :by (eq/eq-subst (lambda [$ int]
-                                              (elem $ intnat/nat))
-                                            (eq/eq-sym <b1>) <b2>)))
+    (have <b> (P (succ n)) :by (eq/rewrite <b2> (eq/eq-sym <b1>))))
   "Induction principle"
   (have <c> (forall [n nat] (P n))
         :by ((nats/nat-induct P) <a> <b>))
@@ -167,13 +165,10 @@
           :by ((natset-nat-succ (nat->natset n)) <b2>))
 
     (have <b4> (= (natset->nat (int/succ (nat->natset n))) (succ n))
-          :by (eq/eq-subst (lambda [$ nat]
-                             (= (natset->nat (int/succ (nat->natset n))) (succ $)))
-                           Hn <b3>))
+          :by (eq/rewrite <b3> Hn))
 
-    (have <b> (P (succ n)) :by (eq/eq-subst (lambda [$ int]
-                                              (= (natset->nat $) (succ n)))
-                                            (eq/eq-sym <b1>) <b4>)))
+    (have <b> (P (succ n)) 
+          :by (eq/rewrite <b4> (eq/eq-sym <b1>))))
   "Inductive principle"
   (have <c> (forall [n nat] (P n)) :by ((nats/nat-induct P) <a> <b>))
   (qed <c>))
@@ -207,13 +202,9 @@
           :by (nat-natset-succ (natset->nat n)))
     (have <b4> (int/= (nat->natset (natset->nat (int/succ n)))
                       (int/succ (nat->natset (natset->nat n))))
-          :by (eq/eq-subst (lambda [$ int]
-                             (int/= (nat->natset (natset->nat (int/succ n))) $))
-                           <b3> <b2>))
+          :by (eq/rewrite <b2> <b3>))
     (have <b> (P (int/succ n)) 
-          :by (eq/eq-subst (lambda [$ int]
-                             (int/= (nat->natset (natset->nat (int/succ n))) (int/succ $)))
-                           Hrec <b4>)))
+          :by (eq/rewrite <b4> Hrec)))
   "Induction principle"
   (have <c> (forall-in [n intnat/nat] (P n))
         :by ((intnat/nat-induct P) <a> <b>))
@@ -234,7 +225,7 @@ of natural numbers."
           :by (H int/zero))
     (have <a2> (= (natset->nat int/zero) zero)
           :by (natset-nat-zero))
-    (have <a> (P zero) :by (eq/eq-subst P <a2> <a1>))
+    (have <a> (P zero) :by (eq/rewrite <a1> <a2>))
     "Case succ"
     (assume [n nat]
       "We have to proove (P (succ n))"
@@ -245,12 +236,9 @@ of natural numbers."
       :by ((natset-nat-succ (nat->natset n)) (nat-in-natset n)))
       (have <b3> (= (natset->nat (int/succ (nat->natset n)))
                     (succ n))
-            :by (eq/eq-subst (lambda [$ nat]
-                               (= (natset->nat (int/succ (nat->natset n))) (succ $)))
-                             (natset-nat-inv n)
-                             <b2>))
+            :by (eq/rewrite <b2> (natset-nat-inv n)))
       (have <b> (P (succ n))
-            :by (eq/eq-subst P <b3> <b1>)))
+            :by (eq/rewrite <b1> <b3>)))
     "Induction principle"
     (have <c> (forall [n nat] (P n))
           :by ((nats/nat-case P) <a> <b>)))
@@ -302,3 +290,5 @@ of natural numbers."
   (lambda [m n nat]
     (natset->nat (f (nat->natset m) (nat->natset n)))))
 
+(u/set-opacity! #'natset->nat true)
+(u/set-opacity! #'nat->natset true)

@@ -109,10 +109,7 @@
           :by (plus-succ zero m))
     (have <b> (= (+ zero (succ m))
                  (succ m))
-          :by (eq/eq-subst (lambda [k nat]
-                                   (= (+ zero (succ m))
-                                      (succ k)))
-                           Hind <b1>)))
+          :by (eq/rewrite <b1> Hind)))
   (qed (((nats/nat-induct (lambda [m nat]
                            (= (+ zero m) m)))
         <a> <b>) m)))
@@ -195,8 +192,6 @@
 ;; which defines formally the set of natural numbers as a subset
 ;; of the (signed) integers.
 
-(comment
-
 (defthm intplus-plus
   []
   (forall [m n nat]
@@ -216,21 +211,14 @@
     (have <a2> (int/= (ip/+ (nat->natset m)
                             (nat->natset zero))
                       (ip/+ (nat->natset m) int/zero))
-          :by (eq/eq-subst (lambda [$ int]
-                             (int/= (ip/+ (nat->natset m) (nat->natset zero))
-                                    (ip/+ (nat->natset m) $)))
-                           <a1>
-                           (eq/eq-refl (ip/+ (nat->natset m) (nat->natset zero)))))
+          :by (eq/nrewrite 2 (eq/eq-refl (ip/+ (nat->natset m) (nat->natset zero))) <a1>))
     (have <a3> (int/= (ip/+ (nat->natset m) int/zero)
                       (nat->natset m))
           :by (ip/plus-zero (nat->natset m)))
     (have <a4> (= m (+ m zero)) :by (eq/eq-sym (plus-zero m)))
     (have <a5> (int/= (nat->natset m)
                       (nat->natset (+ m zero)))
-          :by (eq/eq-subst (lambda [$ nat]
-                             (int/= (nat->natset m)
-                                    (nat->natset $)))
-                           <a4> (eq/eq-refl (nat->natset m))))
+          :by (eq/nrewrite 2 (eq/eq-refl (nat->natset m)) <a4>))
     (have <a> (P zero)
           :by (eq/eq-trans* <a2> <a3> <a5>))
     "Case succ"
@@ -255,19 +243,13 @@
       "And now, we reconstruct our goal."
       (have <c1> (int/= (ip/+ (nat->natset m) (nat->natset (succ n)))
                         (int/succ (ip/+ (nat->natset m) (nat->natset n))))
-            :by (eq/eq-subst (lambda [$ int]
-                               (int/= (ip/+ (nat->natset m) $)
-                                      (int/succ (ip/+ (nat->natset m) (nat->natset n)))))
-                             (eq/eq-sym <b1>) <b2>))
+            :by (eq/rewrite <b2>  (eq/eq-sym <b1>)))
       (have <c2> (int/= (int/succ (ip/+ (nat->natset m) (nat->natset n)))
                         (int/succ (nat->natset (+ m n))))
             :by (eq/eq-cong int/succ <b3>))
       (have <c3> (int/= (int/succ (nat->natset (+ m n)))
                         (nat->natset (+ m (succ n))))
-            :by (eq/eq-subst (lambda [$ nat]
-                               (int/= (int/succ (nat->natset (+ m n)))
-                                      (nat->natset $)))
-                             <b5> <b4>))
+            :by (eq/rewrite <b4> <b5>))
       (have <c> (P (succ n))
             :by (eq/eq-trans* <c1> <c2> <c3>)))
     "Induction principle"
@@ -299,9 +281,7 @@
   (have <b3> _ :by (eq/eq-trans <b1> <b2>))
   (have <b> (int/= (nat->natset (+ n (+ m p)))
                    (ip/+ (ip/+ (nat->natset n) (nat->natset m)) (nat->natset p)))
-        :by (eq/eq-subst (lambda [$ int]
-                           (int/= $
-                                  (ip/+ (ip/+ (nat->natset n) (nat->natset m)) (nat->natset p)))) <b3> <a>))
+        :by (eq/rewrite <a> <b3>))
 
   "And now the second operand"
   (have <c1> (int/= (ip/+ (ip/+ (nat->natset n) (nat->natset m)) (nat->natset p))
