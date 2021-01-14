@@ -195,6 +195,8 @@
 ;; which defines formally the set of natural numbers as a subset
 ;; of the (signed) integers.
 
+(comment
+
 (defthm intplus-plus
   []
   (forall [m n nat]
@@ -319,5 +321,3 @@
   "And finally, we conclude thanks to injectivity"
   (qed ((natint/nat-natset-injective (+ n (+ m p)) (+ (+ n m) p))
         <d>)))
-
-

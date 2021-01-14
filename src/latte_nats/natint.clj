@@ -121,9 +121,7 @@
   "By induction, case zero"
   (have <a1> (int/= (nat->natset zero) int/zero) :by (nat-natset-zero))
   (have <a2> (elem int/zero intnat/nat) :by (intnat/nat-zero))
-  (have <a> (P zero) :by (eq/eq-subst (lambda [$ int]
-                                        (elem $ intnat/nat)) 
-                                      (eq/eq-sym <a1>) <a2>))
+  (have <a> (P zero) :by (eq/rewrite <a2> (eq/eq-sym <a1>)))
   "Case succ"
   (assume [n nat
            Hn (P n)]
@@ -154,9 +152,7 @@
         :by (nat-natset-zero))
   (have <a2> (= (natset->nat int/zero) zero)
         :by (natset-nat-zero))
-  (have <a> (P zero) :by (eq/eq-subst (lambda [$ int]
-                                        (= (natset->nat $) zero))
-                                      (eq/eq-sym <a1>) <a2>))
+  (have <a> (P zero) :by (eq/rewrite <a2> (eq/eq-sym <a1>)))
   "Case succ"
   (assume [n nat
            Hn (P n)]
@@ -174,6 +170,7 @@
           :by (eq/eq-subst (lambda [$ nat]
                              (= (natset->nat (int/succ (nat->natset n))) (succ $)))
                            Hn <b3>))
+
     (have <b> (P (succ n)) :by (eq/eq-subst (lambda [$ int]
                                               (= (natset->nat $) (succ n)))
                                             (eq/eq-sym <b1>) <b4>)))
@@ -194,9 +191,7 @@
   "Case zero"
   (have <a1> (= (natset->nat int/zero) zero) :by (natset-nat-zero))
   (have <a2> (int/= (nat->natset zero) int/zero) :by (nat-natset-zero))
-  (have <a> (P int/zero) :by (eq/eq-subst (lambda [$ nat]
-                                            (int/= (nat->natset $) int/zero))
-                                          (eq/eq-sym <a1>) <a2>))
+  (have <a> (P int/zero) :by (eq/rewrite <a2> (eq/eq-sym <a1>)))
   "Case succ"
   (assume [n int
            Hn (elem n intnat/nat)
