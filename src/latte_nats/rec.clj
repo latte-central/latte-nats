@@ -67,7 +67,7 @@ cf. [[nat-recur-prop]]."
             :by ((p/and-elim-right H) n))
       (have <b3> (R (succ n) (f (g n))) :by <b2>)
       (have <b> (R (succ n) (f y)) 
-            :by (eq/eq-subst (lambda [$ T] (R (succ n) (f $))) <b1> <b3>)))
+            :by (eq/rewrite <b3> <b1>)))
     (have <c> _ :by (p/and-intro <a> <b>)))
   (qed <c>))
 
@@ -303,7 +303,7 @@ for natural numbers."
               :by (classic/excluded-middle-ax (equal n m)))
 
         (assume [Hor1 (equal n m)]
-          (have <c3> (FIX n z) :by (eq/eq-subst (lambda [$ nat] (FIX $ z)) (eq/eq-sym Hor1) <c1>))
+          (have <c3> (FIX n z) :by (eq/rewrite <c1> (eq/eq-sym Hor1)))
           (have <c4> (FIX (succ n) (f z)) :by ((p/and-elim-right <a1>) n z <c3>))
           (have <cc5> (equal z y) :by (Hind z y <c3> Hn))
           (have <c5> (equal (f z) (f y)) :by (eq/eq-cong f <cc5>))
@@ -317,7 +317,7 @@ for natural numbers."
           (have <c8> (R (succ n) (f z))
                 :by (p/and-intro <c4> <c7>))
 
-          (have <c> (R (succ m) (f z)) :by (eq/eq-subst (lambda [$ nat] (R (succ $) (f z))) Hor1 <c8>)))
+          (have <c> (R (succ m) (f z)) :by (eq/rewrite <c8> Hor1)))
 
         (assume [Hor2 (not (equal n m))]
           (have <d1> (FIX (succ m) (f z)) :by ((p/and-elim-right <a1>) m z <c1>))
@@ -500,9 +500,7 @@ for natural numbers."
       (have <b1> (equal (g1 (succ n)) (f (g1 n)))
             :by ((p/and-elim-right Hg1) n))
       (have <b2> (equal (g1 (succ n)) (f (g2 n)))
-            :by (eq/eq-subst (lambda [$ T]
-                               (equal (g1 (succ n)) (f $)))
-                             Hn <b1>))
+            :by (eq/rewrite <b1> Hn))
       (have <b3> (equal (g2 (succ n)) (f (g2 n)))
             :by ((p/and-elim-right Hg2) n))
       (have <b> (equal (g1 (succ n)) (g2 (succ n)))

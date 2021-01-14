@@ -196,12 +196,14 @@
 ;; which defines formally the set of natural numbers as a subset
 ;; of the (signed) integers.
 
+(comment
+
 (defthm intplus-plus
   []
   (forall-in [m intnat/nat]
     (forall-in [n intnat/nat]
       (= (natset->nat (ip/+ m n))
-         (+ (natset->nat m) (natset->nat n)))))
+         (+ (natset->nat m) (natset->nat n))))))
 
 (defthm plus-assoc
   [[n nat] [m nat] [p nat]]
@@ -212,3 +214,4 @@
   (have <a> (int/= (ip/+ (nat->natset n) (ip/+ (nat->natset m) (nat->natset p)))
                    (ip/+ (ip/+ (nat->natset n) (nat->natset m)) (nat->natset p)))
         :by (ip/plus-assoc (nat->natset n) (nat->natset m) (nat->natset p))))
+)
