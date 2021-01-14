@@ -261,6 +261,29 @@ of natural numbers."
 ;;; but it could be useful to populate natset later on...)
 
 
+(defthm nat-natset-injective
+  "The conversion to integers is injective."
+  [[m n nat]]
+  (==> (int/= (nat->natset m) (nat->natset n))
+       (= m n)))
+
+(proof 'nat-natset-injective
+  (assume [Heq _]
+    (have <a> (= (natset->nat (nat->natset m))
+                 (natset->nat (nat->natset n)))
+          :by (eq/eq-cong natset->nat Heq))
+    (have <b> (= (natset->nat (nat->natset m))
+                 m)
+          :by (natset-nat-inv m))
+    (have <c> _ :by (eq/eq-trans (eq/eq-sym <b>) <a>))
+    (have <d> (= (natset->nat (nat->natset n))
+                 n)
+          :by (natset-nat-inv n))
+    (have <e> (= m n) :by (eq/eq-trans <c> <d>)))
+  (qed <e>))
+
+;;; TODO : natset-nat-injective  (but less needed in the nat development)
+
 (definition natset-fun
   "Conversion of a function `f` on integers to a function on natural numbers."
   [f (==> int int)]
