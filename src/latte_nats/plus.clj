@@ -301,3 +301,68 @@
   "And finally, we conclude thanks to injectivity"
   (qed ((natint/nat-natset-injective (+ n (+ m p)) (+ (+ n m) p))
         <d>)))
+
+(defthm plus-right-cancel
+  [[n nat] [m nat] [p nat]]
+  (==> (= (+ n p) (+ m p))
+       (= n m)))
+
+(proof 'plus-right-cancel
+  (assume [H _]
+    (have <a> (int/= (nat->natset (+ n p))
+                     (ip/+ (nat->natset n)
+                           (nat->natset p)))
+          :by (eq/eq-sym (intplus-plus n p)))
+    (have <b> (int/= (nat->natset (+ m p))
+                     (ip/+ (nat->natset m)
+                           (nat->natset p)))
+          :by (eq/eq-sym (intplus-plus m p)))
+    (have <c> (int/= (nat->natset (+ n p))
+                     (nat->natset (+ m p)))
+          :by (eq/eq-cong nat->natset H))
+    (have <d> _ :by (eq/eq-trans* (eq/eq-sym <a>) <c> <b>))
+    (have <e> (int/= (nat->natset n) (nat->natset m))
+          :by ((ip/plus-right-cancel (nat->natset n) (nat->natset m) (nat->natset p))
+               <d>))
+    (have <f> (= n m) :by ((natint/nat-natset-injective n m) <e>)))
+  (qed <f>))
+
+(defthm plus-left-cancel
+  [[n nat] [m nat] [p nat]]
+  (==>  (= (+ p n) (+ p m))
+        (= n m)))
+
+(proof 'plus-left-cancel
+  (assume [H (= (+ p n) (+ p m))]
+    (have <a> (= (+ n p) (+ p m))
+          :by (eq/rewrite H (plus-commute p n)))
+    (have <b> (= (+ n p) (+ m p))
+          :by (eq/rewrite <a> (plus-commute p m)))
+    (have <c> (= n m) :by ((plus-right-cancel n m p) <b>)))
+  (qed <c>))
+
+(defthm plus-right-cancel-conv
+  [[n nat] [m nat] [p nat]]
+  (==> (= n m)
+       (= (+ n p) (+ m p))))
+
+(proof 'plus-right-cancel-conv
+  (assume [H (= n m)]
+    (have <a> (= (+ n p) (+ m p))
+          :by (eq/eq-cong (lambda [k nat] (+ k p))
+                          H)))
+  (qed <a>))
+
+(defthm plus-left-cancel-conv
+  [[n nat] [m nat] [p nat]]
+  (==> (= n m)
+       (= (+ p n) (+ p m))))
+
+(proof 'plus-left-cancel-conv
+  (assume [H (= n m)]
+    (have <a> (= (+ p n) (+ p m))
+          :by (eq/eq-cong (lambda [k nat] (+ p k))
+                          H)))
+  (qed <a>))
+
+
