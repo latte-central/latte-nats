@@ -366,3 +366,64 @@
   (qed <a>))
 
 
+(defthm plus-refl-zero
+  [[n nat] [k nat]]
+  (==> (= (+ n k) n)
+       (= k zero)))
+
+(proof 'plus-refl-zero
+  (assume [H _]
+    (have <a> (= n (+ n zero))
+          :by (eq/eq-sym (plus-zero n)))
+    (have <b> (= (+ n k) (+ n zero))
+          :by (eq/nrewrite 2 H <a>))
+    (have <c> (= k zero)
+          :by ((plus-left-cancel k zero n) <b>)))
+  (qed <c>))
+
+
+(defthm plus-any-zero-left
+  [[m nat] [n nat]]
+  (==> (= (+ m n) zero)
+       (= m zero)))
+
+(proof 'plus-any-zero-left
+  (pose P := (lambda [k nat] (==> (= (+ m k) zero)
+                                  (= m zero))))
+  "By case analysis"
+  "Case zero"
+  (assume [Hz (= (+ m zero) zero)]
+    (have <a1> (= (+ m zero) m)
+          :by (plus-zero m))
+    (have <a2> (= m zero) :by (eq/rewrite Hz <a1>)))
+  (have <a> (P zero) :by <a2>)
+
+  "Case succ"
+  (assume [k nat]
+    (assume [Hsucc (= (+ m (succ k)) zero)]
+      (have <b1> (= (succ (+ m k)) zero)
+            :by (eq/rewrite Hsucc (plus-succ m k)))
+      (have <b2> p/absurd :by ((nats/zero-not-succ (+ m k)) <b1>))
+      (have <b3> (= m zero) :by (<b2> (= m zero))))
+    (have <b> (P (succ k)) :by <b3>))
+
+  (have <c> (forall [k nat] (P k)) :by ((nats/nat-case P) <a> <b>))
+ 
+(qed (<c> n)))
+    
+    
+(defthm plus-any-zero-right
+  [[m nat] [n nat]]
+  (==> (= (+ m n) zero)
+       (= n zero)))
+
+(proof 'plus-any-zero-right
+  (have <a> (==> (= (+ n m) zero)
+                 (= n zero))
+        :by (plus-any-zero-left n m))
+  (have <b> (= (+ n m) (+ m n))
+        :by (plus-commute n m))
+  (qed (eq/rewrite <a> <b>)))
+
+
+
