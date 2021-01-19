@@ -302,6 +302,26 @@
   (qed ((natint/nat-natset-injective (+ n (+ m p)) (+ (+ n m) p))
         <d>)))
 
+(defthm plus-comm-assoc
+  [[n nat] [m nat] [p nat]]
+  (= (+ (+ n m) p)
+     (+ (+ n p) m)))
+
+(proof 'plus-comm-assoc
+  (have <a> (= (+ (+ n m) p)
+               (+ n (+ m p)))
+        :by (eq/eq-sym (plus-assoc n m p)))
+  (have <b> (= (+ n (+ m p))
+               (+ n (+ p m)))
+        :by (eq/eq-cong (lambda [$ nat]
+                          (+ n $)) (plus-commute m p)))
+  (have <c> (= (+ n (+ p m))
+               (+ (+ n p) m))
+        :by (plus-assoc n p m))
+
+  (qed (eq/eq-trans* <a> <b> <c>)))
+
+
 (defthm plus-right-cancel
   [[n nat] [m nat] [p nat]]
   (==> (= (+ n p) (+ m p))

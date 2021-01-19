@@ -68,7 +68,7 @@
   [[m nat] [n nat]]
   (==> (<= m n)
        (<= n m)
-       (= n m)))
+       (= m n)))
 
 (proof 'le-antisym
   (assume [H1 _
@@ -88,7 +88,7 @@
         (have <f> (= (+ n zero) m) :by (eq/rewrite Hk2 <e>))
         (have <g> (= n m) :by (eq/rewrite <f> (plus/plus-zero n))))
       (have <h> (= n m) :by (q/ex-elim H2 <g>)))
-    (have <i> (= n m) :by (q/ex-elim H1 <h>)))
+    (have <i> (= m n) :by (eq/eq-sym (q/ex-elim H1 <h>))))
   (qed <i>))
 
 
@@ -134,5 +134,166 @@
     (have <c> _ :by (q/ex-elim <a> <b>)))
 
   (qed <c>))
+
+
+(definition <
+  "The strict variant of [[<=]]."
+  [[n nat] [m nat]]
+  (and (<= n m)
+       (not (= n m))))
+
+(defthm lt-asym
+  [[n nat] [m nat]]
+  (==> (< n m)
+       (not (< m n))))
+
+(proof 'lt-asym
+  (assume [Hnm (< n m)]
+    (assume [Hmn (< m n)]
+      (have <a> (= n m)
+            :by ((le-antisym n m)
+                 (p/and-elim-left Hnm)
+                 (p/and-elim-left Hmn)))
+      (have <b> p/absurd :by ((p/and-elim-right Hnm) <a>))))
+  (qed <b>))
+
+
+(defthm lt-trans
+  [[n nat] [m nat] [p nat]]
+  (==> (< n m)
+       (< m p)
+       (< n p)))
+
+(proof 'lt-trans
+  (assume [Hnm (< n m)
+           Hmp (< m p)]
+    (have <a> (<= n m) :by (p/and-elim-left Hnm))
+    (have <b> (not (= n m)) :by (p/and-elim-right Hnm))
+    (have <c> (<= m p) :by (p/and-elim-left Hmp))
+    (have <d> (not (= m p)) :by (p/and-elim-right Hmp))
+    (have <e> (<= n p) :by ((le-trans n m p) <a> <c>))
+    (assume [Hcut (= n p)]
+      (have <f1> (< p m)
+            :by (eq/rewrite Hnm Hcut))
+      (have <f2> (not (< p m)) :by ((lt-asym m p) Hmp))
+      (have <f> p/absurd :by (<f2> <f1>)))
+    (have <g> (< n p)
+          :by (p/and-intro <e> <f>)))
+  (qed <g>))
+
+(defthm lt-trans-weak
+  [[n nat] [m nat] [p nat]]
+  (==> (<= n m)
+       (< m p)
+       (< n p)))
+
+(proof 'lt-trans-weak
+  (assume [Hnm (<= n m)
+           Hmp (< m p)]
+    (have <a> (<= m p) :by (p/and-elim-left Hmp))
+    (have <b> (not (= m p)) :by (p/and-elim-right Hmp))
+    (have <c> (<= n p) :by ((le-trans n m p) Hnm <a>))
+    (assume [H (= n p)]
+      (have <d1> (<= p m) :by (eq/rewrite Hnm H))
+      (have <d2> (= m p) :by ((le-antisym m p) <a> <d1>))
+      (have <d> p/absurd :by (<b> <d2>)))
+    (have <e> (< n p) :by (p/and-intro <c> <d>)))
+  (qed <e>))
+
+(defthm lt-trans-weak-alt
+  "An alternative to [[lt-trans-weak]]."
+  [[n nat] [m nat] [p nat]]
+  (==> (< n m)
+       (<= m p)
+       (< n p)))
+
+(proof 'lt-trans-weak-alt
+  (assume [Hnm (< n m)
+           Hmp (<= m p)]
+    (have <a> (<= n m) :by (p/and-elim-left Hnm))
+    (have <b> (not (= n m)) :by (p/and-elim-right Hnm))
+    (have <c> (<= n p) :by ((le-trans n m p) <a> Hmp))
+    (assume [H (= n p)]
+      (have <d1> (= p n) :by (eq/eq-sym H))
+      (have <d2> (<= m n) :by (eq/rewrite Hmp <d1>))
+      (have <d3> (= n m) :by ((le-antisym n m) <a> <d2>))
+      (have <d> p/absurd :by (<b> <d3>)))
+    (have <e> (< n p) :by (p/and-intro <c> <d>)))
+  (qed <e>))
+
+(defthm lt-le
+  [[m nat] [n nat]]
+  (==> (< m n)
+       (<= m n)))
+
+(proof 'lt-le
+  (assume [Hmn (< m n)]
+    (have <a> (<= m n)
+          :by (p/and-elim-left Hmn)))
+  (qed <a>))
+
+(defthm plus-le
+  [[m nat] [n nat] [p nat]]
+  (==> (<= (+ m p) (+ n p))
+       (<= m n)))
+
+(proof 'plus-le
+  (assume [H _]
+    (assume [k nat
+             Hk (= (+ (+ m p) k) (+ n p))]
+      
+      (have <a> (= (+ (+ m p) k)
+                   (+ m (+ p k)))
+            :by (eq/eq-sym (plus/plus-assoc m p k)))
+      (have <b> (= (+ m (+ p k))
+                   (+ m (+ k p)))
+            :by (eq/eq-cong (lambda [$ nat]
+                              (+ m $)) (plus/plus-commute p k)))
+      (have <c> (= (+ m (+ k p))
+                   (+ (+ m k) p))
+            :by (plus/plus-assoc m k p))
+      
+      (have <d> (= (+ (+ m p) k) (+ (+ m k) p))
+            :by (eq/eq-trans* <a> <b> <c>))
+
+      (have <e> (= (+ (+ m k) p) (+ n p))
+            :by (eq/rewrite Hk <d>))
+
+      (have <f> (= (+ m k) n)
+            :by ((plus/plus-right-cancel (+ m k) n p) <e>))
+      
+      (have <g> (exists [k nat] (= (+ m k) n))
+            :by ((q/ex-intro (lambda [$ nat] (= (+ m $) n)) k) <f>)))
+
+    (have <h> (<= m n) :by (q/ex-elim H <g>)))
+
+  (qed <h>))
+
+(defthm plus-le-conv
+  "The converse of [[plus-le]]."
+  [[m nat] [n nat] [p nat]]
+  (==> (<= m n)
+       (<= (+ m p) (+ n p))))
+
+(proof 'plus-le-conv
+  (assume [H _]
+    (assume [k nat
+             Hk (= (+ m k) n)]
+      (have <a> (= (+ (+ m k) p) (+ n p))
+            :by (eq/eq-cong (lambda [$ nat]
+                              (+ $ p)) Hk))
+      (have <b> (= (+ (+ m k) p)
+                   (+ (+ m p) k))
+            :by (plus/plus-comm-assoc m k p))
+      (have <c> (= (+ (+ m p) k) (+ n p))
+            :by (eq/rewrite <a> <b>))
+      (have <d> (<= (+ m p) (+ n p))
+            :by ((q/ex-intro (lambda [k nat] (= (+ (+ m p) k) (+ n p))) k) <c>)))
+    (have <e> _ :by (q/ex-elim H <d>)))
+(qed <e>))
+
+
+
+
 
 
