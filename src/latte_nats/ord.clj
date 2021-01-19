@@ -1,7 +1,7 @@
 (ns latte-nats.ord
   "The oredering relation for natural numbers."
 
-  (:refer-clojure :exclude [and or not = + < <= > >=])
+  (:refer-clojure :exclude [and or not = + < <= > >= int])
 
   (:require [latte.core :as latte :refer [defaxiom defthm definition
                                           deflemma
@@ -14,10 +14,18 @@
             [latte-prelude.equal :as eq :refer [equal]]
             [latte-prelude.quant :as q :refer [exists]]
 
+            [latte-sets.set :as s :refer [elem]]
+
             [latte-nats.core :as nats :refer [nat = zero succ]]
             [latte-nats.rec :as rec]
             [latte-nats.natint :as natint :refer [nat->natset natset->nat]]
             [latte-nats.plus :as plus :refer [+]]
+
+            [latte-integers.int :as int :refer [int]]
+            [latte-integers.nat :as intnat]
+            [latte-integers.ord :as iord]
+            [latte-integers.plus :as ip]
+            [latte-integers.minus :as im]
             ))
 
 (definition <=
@@ -84,5 +92,47 @@
   (qed <i>))
 
 
+(defthm intleq-leq
+  [[m nat] [n nat]]
+  (==> (iord/<= (nat->natset m)
+                (nat->natset n))
+       (<= m n)))
+
+(try-proof 'intleq-leq
+  (assume [H _]
+    (have <a> (exists [k int]
+                (and (elem k intnat/nat)
+                     (int/= (ip/+ (nat->natset m) k)
+                            (nat->natset n))))
+          :by ((iord/plus-le-prop (nat->natset m) (nat->natset n)) H))
+    (assume [k int
+             Hk (and (elem k intnat/nat)
+                     (int/= (ip/+ (nat->natset m) k)
+                            (nat->natset n)))]
+
+      (have <b1> (int/= k (nat->natset (natset->nat k)))
+            :by (eq/eq-sym (natint/nat-natset-inv k (p/and-elim-left Hk))))
+
+      (have <b2> (int/= (ip/+ (nat->natset m) k)
+                        (ip/+ (nat->natset m) (nat->natset (natset->nat k))))
+            :by (eq/eq-cong (lambda [j int]
+                           (ip/+ (nat->natset m) j)) <b1>))
+
+      (have <b3> (int/= (ip/+ (nat->natset m) (nat->natset (natset->nat k)))
+                        (nat->natset (+ m (natset->nat k))))
+            :by (plus/intplus-plus m (natset->nat k)))
+
+      (have <b4> (int/= (nat->natset (+ m (natset->nat k)))
+                        (nat->natset n))
+            :by (eq/eq-trans* (eq/eq-sym <b3>) (eq/eq-sym <b2>) (p/and-elim-right Hk)))
+      
+      (have <b5> (= (+ m (natset->nat k)) n)
+            :by ((natint/nat-natset-injective (+ m (natset->nat k)) n) <b4>))
+      (have <b> (exists [u nat] (= (+ m u) n))
+            :by ((q/ex-intro (lambda [u nat]
+                               (= (+ m u) n)) (natset->nat k)) <b5>)))
+    (have <c> _ :by (q/ex-elim <a> <b>)))
+
+  (qed <c>))
 
 
