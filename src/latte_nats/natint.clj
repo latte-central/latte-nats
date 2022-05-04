@@ -292,3 +292,34 @@ of natural numbers."
 
 (u/set-opacity! #'natset->nat true)
 (u/set-opacity! #'nat->natset true)
+
+
+;; useless but check ok
+(defthm from-natset-prop
+  [P (==> int :type), n nat]
+  (==> (P (nat->natset n))
+       ((natset-prop P) n)))
+
+(proof 'from-natset-prop
+  (assume [H _]
+    (have <a> _ :by H))
+  (qed <a>))
+
+
+(defthm from-natset
+  [P (==> int :type)]
+  (==> (forall [n int]
+         (==> (elem n intnat/nat)
+              (P n)))
+       (forall [n nat]
+         ((natset-prop P) n))))
+
+(proof 'from-natset
+  (assume [Hint _]
+    (assume [n nat]
+      (pose in := (nat->natset n))
+      (have <a> (elem in intnat/nat)
+            :by (nat-in-natset n))
+      (have <b> (P in) :by (Hint in <a>))
+      (have <c> _ :by ((from-natset-prop P n) <b>))))
+  (qed <c>))
