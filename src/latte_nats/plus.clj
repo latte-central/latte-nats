@@ -6,19 +6,20 @@
   (:require [latte.core :as latte :refer [defaxiom defthm definition
                                           deflemma
                                           lambda forall proof assume have
-                                          pose try-proof qed]]
+                                          pose try-proof qed search-theorem]]
 
             [latte.utils :as u]
 
             [latte-prelude.prop :as p :refer [and or not <=>]]
             [latte-prelude.equal :as eq :refer [equal]]
             [latte-prelude.quant :as q :refer [exists]]
+            [latte-prelude.algebra :as alg]
 
             [latte-sets.quant :as sq :refer [forall-in]]
             
             [latte-nats.core :as nats :refer [nat = zero succ]]
             [latte-nats.rec :as rec]
-            ))
+                       ))
 
 (definition add-prop
   "The property of the addition of `m` to an natural integer."
@@ -382,4 +383,51 @@
   (qed (eq/rewrite <a> <b>)))
 
 
+;; Algebraic properties
 
+
+(defthm associative-plus
+  []
+  (alg/associative +))
+
+(proof 'associative-plus
+  (qed plus-assoc))
+
+(defthm identity-left-plus
+  []
+  (alg/identity-left + zero))
+
+;; (search-theorem 'latte-nats.plus '(= (+ zero ?x) ?y))
+
+(proof 'identity-left-plus
+  (qed plus-zero-swap))
+
+(defthm identity-right-plus
+  []
+  (alg/identity-right + zero))
+
+;; (search-theorem 'latte-nats.plus '(= (+ ?x zero) ?z))
+
+(proof 'identity-right-plus
+  (qed plus-zero))
+
+(defthm identity-plus
+  []
+  (alg/identity + zero))
+
+(proof 'identity-plus
+  (qed (p/and-intro identity-left-plus
+                    identity-right-plus)))
+(comment
+
+(defthm unique-identity-plus
+  []
+  (q/unique (lambda [n nat] (alg/identity-def nat + n))))
+
+(try-proof 'unique-identity-plus
+  (pose P := (lambda [n nat] (alg/identity-def nat + n)))
+  (have <a> (q/ex P) :by ((q/ex-intro P zero) identity-plus))
+  (have <b> _ :by (alg/identity-single-thm nat +))
+  (qed (p/and-intro <a> <b>)))
+
+)
