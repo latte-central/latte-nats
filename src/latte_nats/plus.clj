@@ -182,14 +182,55 @@
   (have <e> (P n) :by ((nats/nat-induct P) <a> <b> n))
   (qed <e>))
 
-(comment
 
 (defthm plus-assoc
   [[n nat] [m nat] [p nat]]
   (= (+ n (+ m p))
      (+ (+ n m) p)))
 
-;; TODO proof
+(proof 'plus-assoc
+    (pose P := (lambda [k nat]
+               (= (+ n (+ m k))
+                  (+ (+ n m) k))))
+  "We prove `P` by induction on `k`."
+  "First `(P zero)`"
+  (have <a1> (= (+ n (+ m zero))
+                (+ n m))
+        :by (eq/eq-cong (lambda [k nat] (+ n k))
+                         (plus-zero m)))
+  (have <a2> (= (+ n m)
+                (+ (+ n m) zero))
+        :by (eq/eq-sym (plus-zero (+ n m))))
+  (have <a> (P zero) :by (eq/eq-trans <a1> <a2>))
+  "Then the inductive cases."
+  (assume [p nat
+           Hind (= (+ n (+ m p))
+                   (+ (+ n m) p))]
+    "Let's prove `(P (succ p))`."
+    (have <b1> (= (+ n (+ m (succ p)))
+                  (+ n (succ (+ m p))))
+          :by (eq/eq-cong (lambda [k nat] (+ n k))
+                          (plus-succ m p)))
+    (have <b2>  (= (+ n (succ (+ m p)))
+                   (succ (+ n (+ m p))))
+          :by (plus-succ n (+ m p)))
+    (have <b3> (= (+ n (+ m (succ p)))
+                  (succ (+ n (+ m p))))
+          :by (eq/eq-trans <b1> <b2>))
+    (have <b4> (= (succ (+ n (+ m p)))
+                  (succ (+ (+ n m) p)))
+          :by (eq/eq-cong succ Hind))
+    (have <b5> (= (+ n (+ m (succ p)))
+                  (succ (+ (+ n m) p)))
+          :by (eq/eq-trans <b3> <b4>))
+    ;; = (+ (+ n m) (succ p))
+    (have <b6> (= (succ (+ (+ n m) p))
+                  (+ (+ n m) (succ p)))
+          :by (eq/eq-sym (plus-succ (+ n m) p)))
+    (have <b> (P (succ p))
+          :by (eq/eq-trans <b5> <b6>)))
+  (have <c> (P p) :by ((nats/nat-induct P) <a> <b> p))
+  (qed <c>))
 
 (defthm plus-comm-assoc
   [[n nat] [m nat] [p nat]]
@@ -216,8 +257,33 @@
   (==> (= (+ n p) (+ m p))
        (= n m)))
 
-;; TODO proof
-
+(proof 'plus-right-cancel
+  "We proceed by induction."
+  (pose P := (lambda [k nat]
+               (==> (= (+ n k) (+ m k))
+                    (= n m))))
+  "Base case."
+  (assume [Hz (= (+ n zero) (+ m zero))]
+    (have <a1> (= n (+ m zero))
+          :by (eq/rewrite Hz (plus-zero n)))
+    (have <a2> (= n m)
+          :by (eq/rewrite <a1> (plus-zero m))))
+  (have <a> (P zero) :by <a2>)
+  "Inductive case."
+  (assume [k nat
+           Hk (P k)]
+    "Successor case."
+    (assume [Hsucc (= (+ n (succ k)) (+ m (succ k)))]
+      (have <b1> (= (succ (+ n k)) (+ m (succ k)))
+            :by (eq/rewrite Hsucc (plus-succ n k)))
+      (have <b2> (= (succ (+ n k)) (succ (+ m k)))
+            :by (eq/rewrite <b1> (plus-succ m k)))
+      (have <b3> (= (+ n k) (+ m k)) :by (nats/succ-injective (+ n k) (+ m k) <b2>))
+      (have <b4> (= n m) :by (Hk <b3>)))
+    (have <b> (P (succ k)) :by <b4>))
+  "We apply the induction principle."
+  (have <c> (P p) :by ((nats/nat-induct P) <a> <b> p))
+  (qed <c>))
 
 (defthm plus-left-cancel
   [[n nat] [m nat] [p nat]]
@@ -256,7 +322,6 @@
           :by (eq/eq-cong (lambda [k nat] (+ p k))
                           H)))
   (qed <a>))
-
 
 (defthm plus-refl-zero
   [[n nat] [k nat]]
@@ -303,7 +368,6 @@
  
 (qed (<c> n)))
     
-    
 (defthm plus-any-zero-right
   [[m nat] [n nat]]
   (==> (= (+ m n) zero)
@@ -318,4 +382,4 @@
   (qed (eq/rewrite <a> <b>)))
 
 
-)
+
