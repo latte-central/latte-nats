@@ -418,16 +418,14 @@
 (proof 'identity-plus
   (qed (p/and-intro identity-left-plus
                     identity-right-plus)))
-(comment
 
 (defthm unique-identity-plus
   []
-  (q/unique (lambda [n nat] (alg/identity-def nat + n))))
+  (q/unique (alg/identity-def nat +)))
 
-(try-proof 'unique-identity-plus
-  (pose P := (lambda [n nat] (alg/identity-def nat + n)))
+(proof 'unique-identity-plus
+  (pose P := (alg/identity-def nat +))
   (have <a> (q/ex P) :by ((q/ex-intro P zero) identity-plus))
-  (have <b> _ :by (alg/identity-single-thm nat +))
+  (have <b> (q/single P) :by (alg/identity-single +))
   (qed (p/and-intro <a> <b>)))
 
-)
