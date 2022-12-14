@@ -123,3 +123,109 @@
           :by (eq/rewrite <b2> Hind)))
   "Conclusion"
   (qed (((nats/nat-induct P) <a> <b>) n)))
+
+(defthm times-succ-swap-left
+  [[n nat] [m nat]]
+  (= (* (succ n) m)
+     (+ m (* n m))))
+
+;; This one is a fairly cumbersome one ...
+(proof 'times-succ-swap-left
+  "We proceed by induction on m"
+  (pose P := (lambda [k nat] (= (* (succ n) k)
+                                (+ k (* n k)))))
+  "Base case m=0"
+  (have <a1> (= (* (succ n) zero)
+                zero)
+        :by (times-zero (succ n)))
+  (have <a2> (= (+ zero (* n zero))
+                (+ zero zero))
+        :by (eq/eq-cong (lambda [k nat] (+ zero k))
+                        (times-zero n)))
+  (have <a3> (= (+ zero (* n zero))
+                zero)
+        :by (eq/rewrite <a2> (plus/plus-zero zero)))
+  (have <a4> (= zero
+                (+ zero (* n zero)))
+        :by (eq/eq-sym <a3>))
+  (have <a> (P zero) :by (eq/eq-trans <a1> <a4>))
+  "Inductive case"
+  (assume [k nat
+           Hind (= (* (succ n) k)
+                   (+ k (* n k)))]
+    (have <b1> (= (* (succ n) (succ k))
+                  (+ (succ n) (* (succ n) k)))
+          :by (times-succ (succ n) k))
+
+    (have <b2> (= (+ (succ n) (* (succ n) k))
+                  (+ (succ n) (+ k (* n k))))
+          :by (eq/eq-cong (lambda [j nat] (+ (succ n) j))
+                          Hind))
+
+    (have <b2'> (= (+ (succ n) (* (succ n) k))
+                  (+ (succ n) (+ (* n k) k)))
+          :by (eq/rewrite <b2> (plus/plus-commute k (* n k))))
+
+    (have <b3> (= (+ (succ n) (* (succ n) k))
+                  (succ (+ n (+ (* n k) k))))
+          :by (eq/rewrite <b2'> (plus/plus-succ-swap n (+ (* n k) k))))
+    
+    (have <b4> (= (+ (succ n) (* (succ n) k))
+                  (succ (+ (+ n (* n k)) k)))
+          :by (eq/rewrite <b3> (plus/plus-assoc n (* n k) k)))
+
+    (have <b5> (= (+ (succ n) (* (succ n) k))
+                  (succ (+ (+ (* n k) n) k)))
+          :by (eq/rewrite <b4> (plus/plus-commute n (* n k))))
+
+    (have <b6> (= (+ (succ n) (* (succ n) k))
+                  (succ (+ (* n (succ k)) k)))
+          :by (eq/rewrite <b5> (eq/eq-sym (times-succ-swap-right n k))))
+
+    (have <b7> (= (+ (succ n) (* (succ n) k))
+                  (+ (* n (succ k)) (succ k)))
+          :by (eq/rewrite <b6> (plus/plus-succ-sym (* n (succ k)) k)))
+
+    (have <b8> (= (+ (succ n) (* (succ n) k))
+                  (+ (succ k) (* n (succ k))))
+          :by (eq/rewrite <b7> (plus/plus-commute (* n (succ k)) (succ k))))
+
+    (have <b> (P (succ k))
+          :by (eq/eq-trans <b1> <b8>)))
+
+  "Conclusion"
+  (qed (((nats/nat-induct P) <a> <b>) m)))
+
+(defthm times-commute
+  "Commutativity of multiplication."
+  [[m nat] [n nat]]
+  (= (* m n) (* n m)))
+
+
+(proof 'times-commute
+  "By induction on `m`."
+  (pose P := (lambda [k nat] (= (* k n) (* n k))))
+  "Base case."
+  (have <a1> (= (* zero n) zero)
+        :by (times-zero-swap n))
+  (have <a2> (= zero (* n zero))
+        :by (eq/eq-sym (times-zero n)))  
+  (have <a> (P zero) :by (eq/eq-trans <a1> <a2>))
+  "Inductive cases."
+  (assume [k nat
+           Hind (= (* k n) (* n k))]
+    (have <b1> (= (* (succ k) n)
+                  (+ n (* k n)))
+          :by (times-succ-swap-left k n))
+    (have <b2> (= (* (succ k) n)
+                  (+ n (* n k)))
+          :by (eq/rewrite <b1> Hind))
+    (have <b>(P (succ k))
+          :by (eq/rewrite <b2> (eq/eq-sym (times-succ n k)))))
+
+  "Conclusion"
+  (qed (((nats/nat-induct P) <a> <b>) m)))
+
+
+    
+
