@@ -8,5 +8,6 @@
               '[latte-nats.core
                 latte-nats.rec
                 latte-nats.plus
-                latte-nats.ord]))
+                latte-nats.ord
+                latte-nats.times]))
 

@@ -22,7 +22,7 @@
                        ))
 
 (definition add-prop
-  "The property of the addition of `m` to an natural integer."
+  "The property of the addition of `m` to a natural integer."
   [[m nat]]
   (lambda [g (==> nat nat)]
     (and (= (g zero) m)
@@ -79,14 +79,6 @@
 (u/set-opacity! #'plus true)
 (u/set-opacity! #'+ true)
 
-(defthm plus-succ-sym
-  [[m nat] [n nat]]
-  (= (succ (+ m n))
-     (+ m (succ n))))
-
-(proof 'plus-succ-sym
-  (qed (eq/eq-sym (plus-succ m n))))
-
 (defthm plus-zero-swap
   [[m nat]]
   (= (+ zero m) m))
@@ -109,6 +101,14 @@
   (qed (((nats/nat-induct (lambda [m nat]
                            (= (+ zero m) m)))
         <a> <b>) m)))
+
+(defthm plus-succ-sym
+  [[m nat] [n nat]]
+  (= (succ (+ m n))
+     (+ m (succ n))))
+
+(proof 'plus-succ-sym
+  (qed (eq/eq-sym (plus-succ m n))))
 
 (defthm plus-succ-swap
   [[m nat] [n nat]]
