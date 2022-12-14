@@ -7,7 +7,6 @@
   (latte-main args "latte-nats"
               '[latte-nats.core
                 latte-nats.rec
-                latte-nats.natint
                 latte-nats.plus
                 latte-nats.ord]))
 
