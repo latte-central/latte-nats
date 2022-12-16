@@ -4,9 +4,9 @@
   (:refer-clojure :exclude [and or not int =])
 
   (:require [latte.core :as latte :refer [defaxiom defthm definition
-                                          lambda forall
+                                          lambda forall pose
                                           proof try-proof assume have qed]]
-            [latte-prelude.prop :as p :refer [not]]
+            [latte-prelude.prop :as p :refer [not or]]
             [latte-prelude.equal :as eq]
             [latte-prelude.quant :as q :refer [exists]]
             [latte-prelude.fun :as fun]
@@ -87,3 +87,29 @@
     (assume [n nat]
       (have <b> (P n) :by ((nat-induct P) H0 <a> n))))
   (qed <b>))
+
+(defthm nat-split
+  "Split a natural number"
+  [n nat]
+  (or (= n zero)
+      (exists [m nat] (= n (succ m)))))
+
+(proof 'nat-split
+  "By case"
+  (pose P := (lambda [k nat]
+               (or (= k zero)
+                   (exists [m nat] (= k (succ m))))))
+  "Case n=0"
+  (have <a> (P zero) :by (p/or-intro-left 
+                          (eq/eq-refl zero)
+                          (exists [m nat] (= zero (succ m)))))
+  "Inductive case"
+  (assume [k nat]
+    (have <b1> _ :by ((q/ex-intro (lambda [m nat] (= (succ k) (succ m))) k)
+                      (eq/eq-refl (succ k))))
+    (have <b> (P (succ k)) :by (p/or-intro-right
+                                (= (succ k) zero)
+                                <b1>)))
+
+  "Conclusion"
+  (qed (((nat-case P) <a> <b>) n)))

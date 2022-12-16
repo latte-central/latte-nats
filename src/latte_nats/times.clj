@@ -17,7 +17,7 @@
 
             [latte-sets.quant :as sq :refer [forall-in]]
             
-            [latte-nats.core :as nats :refer [nat = zero succ]]
+            [latte-nats.core :as nats :refer [nat = <> zero succ]]
             [latte-nats.rec :as rec]
             [latte-nats.plus :as plus :refer [+]]
                        ))
@@ -407,5 +407,41 @@
 
   "Conclusion"
   (qed (((nats/nat-induct P) <a> <b>) p)))
+
+
+(defthm times-right-cancel
+  [[m nat] [n nat] [p nat]]
+  (==> (<> m zero)
+       (= (* m n) (* m p))
+       (= n p)))
+
+(try-proof 'times-right-cancel
+  "By induction on m"
+  (pose P := (lambda [k nat]
+               (==> (<> k zero)
+                    (= (* k n) (* k p))
+                    (= n p))))
+  "Base case m=0"
+  (assume [Hcontra (<> zero zero)
+           H2 (= (* zero n) (* zero p))]
+    (have <a1> (= zero zero) :by (eq/eq-refl zero))
+    (have <a2> p/absurd :by (Hcontra <a1>))
+    (have <a3> (= n p) :by (<a2> (= n p))))
+  (have <a> (P zero) :by <a3>)
+
+  "Inductive case"
+  (assume [k nat Hind (P (succ k))]
+    (assume [H1 (<> (succ k) zero) ;; <= this is a tautology
+             H2 (= (* (succ k) n) (* (succ k) p))]
+
+      (have <b1> (= (+ n (* k n)) (* (succ k) p))
+            :by (eq/rewrite H2 (times-succ-swap-left k n)))
+      (have <b2> (= (+ n (* k n)) (+ p (* k p)))
+            :by (eq/rewrite <b1> (times-succ-swap-left k p)))))
+
+  ;; TODO :  nat-split
+
+)
+
 
 
