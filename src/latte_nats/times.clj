@@ -408,6 +408,7 @@
   "Conclusion"
   (qed (((nats/nat-induct P) <a> <b>) p)))
 
+(comment
 
 (defthm times-right-cancel
   [[m nat] [n nat] [p nat]]
@@ -430,16 +431,36 @@
   (have <a> (P zero) :by <a3>)
 
   "Inductive case"
-  (assume [k nat Hind (P (succ k))]
+  (assume [k nat Hind (P k)]
     (assume [H1 (<> (succ k) zero) ;; <= this is a tautology
              H2 (= (* (succ k) n) (* (succ k) p))]
 
       (have <b1> (= (+ n (* k n)) (* (succ k) p))
             :by (eq/rewrite H2 (times-succ-swap-left k n)))
       (have <b2> (= (+ n (* k n)) (+ p (* k p)))
-            :by (eq/rewrite <b1> (times-succ-swap-left k p)))))
+            :by (eq/rewrite <b1> (times-succ-swap-left k p)))
+      (have <c> (or (= k zero)
+                    (exists [j nat] (= k (succ j))))
+            :by (nats/nat-split k))
+      (assume [Hzero (= k zero)]
+        (have <d1> (= (+ n (* zero n)) (+ p (* k p)))
+              :by (eq/rewrite <b2> Hzero))
+        (have <d2> (= (+ n zero) (+ p (* k p)))
+              :by (eq/rewrite <d1> (times-zero-swap n)))
+        (have <d3> (= n (+ p (* k p)))
+              :by (eq/rewrite <d2> (plus/plus-zero n)))
+        (have <d4> (= n (+ p (* zero p)))
+              :by (eq/rewrite <d3> Hzero))
+        (have <d5> (= n (+ p zero))
+              :by (eq/rewrite <d4> (times-zero-swap p)))
+        (have <d> (= n p) :by (eq/rewrite <d5> (plus/plus-zero p))))
 
-  ;; TODO :  nat-split
+      (assume [Hsucc (exists [j nat] (= k (succ j)))]
+        (assume [j nat 
+                 Hj (= k (succ j))]
+          ))
+
+)))
 
 )
 
