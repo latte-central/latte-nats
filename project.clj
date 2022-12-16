@@ -1,4 +1,4 @@
-(defproject latte-nats "0.6.0-SNAPSHOT"
+(defproject latte-nats "0.7.0-SNAPSHOT"
   :description "A formalization of natural numbers in LaTTe."
   :url "https://github.com/latte-central/latte-nats.git"
   :license {:name "MIT Licence"
@@ -10,5 +10,9 @@
             "clear-cert" ["run" ":clear-cert"]}
   :codox {:output-path "docs/"
           :metadata {:doc/format :markdown}
-          :namespaces [latte-nats.core]}
+          :namespaces [latte-nats.core
+                       latte-nats.rec
+                       latte-nats.plus
+                       latte-nats.ord
+                       latte-nats.times]}
   :plugins [[lein-codox "0.10.8"]])
