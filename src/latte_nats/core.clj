@@ -114,3 +114,28 @@
   "Conclusion"
   (qed (((nat-case P) <a> <b>) n)))
 
+(defthm succ-not
+  [n nat]
+  (<> n (succ n)))
+
+(proof 'succ-not
+  (pose P := (lambda [n nat] (<> n (succ n))))
+  "By induction"
+  "Base case"
+  (have <a1> (<> (succ zero) zero) :by (zero-not-succ zero))
+  (have <a> (P zero) :by ((eq/not-eq-sym (succ zero) zero) <a1>))
+
+  "Inductive case"
+  (assume [n nat
+           Hind (P n)]
+    (have <b1> (<> n (succ n)) :by Hind)
+
+    (have <b> (P (succ n))
+          :by ((fun/injective-contra succ)
+               (succ-injective)
+               n (succ n)
+               <b1>)))
+
+  (qed ((nat-induct P) <a> <b> n)))
+
+

@@ -3,7 +3,7 @@
 
   (:refer-clojure :exclude [and or not int = +])
 
-  (:require [latte.core :as latte :refer [defaxiom defthm definition
+  (:require [latte.core :as latte :refer [defaxiom try-defthm defthm definition
                                           deflemma
                                           lambda forall proof assume have
                                           pose try-proof qed search-theorem]]
@@ -17,7 +17,7 @@
 
             [latte-sets.quant :as sq :refer [forall-in]]
             
-            [latte-nats.core :as nats :refer [nat = zero succ]]
+            [latte-nats.core :as nats :refer [nat = zero succ one]]
             [latte-nats.rec :as rec]
                        ))
 
@@ -72,6 +72,21 @@
 (proof 'plus-succ
   (qed ((p/and-elim-right (plus-prop m)) n)))
 
+(defthm plus-one-succ
+  [n nat]
+  (= (+ n one)
+     (succ n)))
+
+(proof 'plus-one-succ
+  (have <a> (= (+ n one)
+               (succ (+ n zero)))
+        :by (plus-succ n zero))
+  (have <b> (= (+ n zero) n)
+        :by (plus-zero n))
+
+  (qed (eq/eq-subst (lambda [$ nat]
+                            (= (+ n one)
+                               (succ $))) <b> <a>)))
 
 ;; make the basic definitions opaque
 ;; (otherwise terms become extra-large)

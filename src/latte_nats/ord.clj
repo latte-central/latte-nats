@@ -1,7 +1,7 @@
 (ns latte-nats.ord
   "The oredering relation for natural numbers."
 
-  (:refer-clojure :exclude [and or not = + < <= > >= int])
+  (:refer-clojure :exclude [and or not = + < <= > >=])
 
   (:require [latte.core :as latte :refer [defaxiom defthm definition
                                           deflemma
@@ -16,7 +16,7 @@
 
             [latte-sets.set :as s :refer [elem]]
 
-            [latte-nats.core :as nats :refer [nat = zero succ]]
+            [latte-nats.core :as nats :refer [nat = <> zero succ one]]
             [latte-nats.rec :as rec]
             [latte-nats.plus :as plus :refer [+]]
 
@@ -85,6 +85,15 @@
     (have <i> (= m n) :by (eq/eq-sym (q/ex-elim H1 <h>))))
   (qed <i>))
 
+(defthm le-succ
+  [n nat]
+  (<= n (succ n)))
+
+(proof 'le-succ
+  (have <a> (= (+ n one) (succ n))
+        :by (plus/plus-one-succ n))
+
+  (qed ((q/ex-intro (lambda [$ nat] (= (+ n $) (succ n))) one) <a>)))
 
 (definition <
   "The strict variant of [[<=]]."
@@ -181,6 +190,15 @@
     (have <a> (<= m n)
           :by (p/and-elim-left Hmn)))
   (qed <a>))
+
+(defthm lt-succ 
+  [n nat]
+  (< n (succ n)))
+
+(proof 'lt-succ
+  (have <a> (<= n (succ n)) :by (le-succ n))
+  (have <b> (<> n (succ n)) :by (nats/succ-not n))
+  (qed (p/and-intro <a> <b>)))
 
 (defthm plus-le
   [[m nat] [n nat] [p nat]]
