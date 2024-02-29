@@ -85,6 +85,16 @@
     (have <i> (= m n) :by (eq/eq-sym (q/ex-elim H1 <h>))))
   (qed <i>))
 
+(defthm le-zero
+  [n nat]
+  (<= zero n))
+
+(proof 'le-zero
+  (have <a> (= (+ zero n) n)
+        :by (plus/plus-zero-swap n))
+  (qed ((q/ex-intro (lambda [$ nat]
+                      (= (+ zero $) n)) n) <a>)))
+
 (defthm le-succ
   [n nat]
   (<= n (succ n)))
@@ -94,6 +104,18 @@
         :by (plus/plus-one-succ n))
 
   (qed ((q/ex-intro (lambda [$ nat] (= (+ n $) (succ n))) one) <a>)))
+
+(defthm le-one
+  [n nat]
+  (<= one (succ n)))
+
+(proof 'le-one
+  (have <a> (= (+ n one) (+ one n))
+        :by (plus/plus-commute n one))
+  (have <b> (= (+ one n) (succ n))
+        :by (eq/eq-subst (lambda [$ nat] (= $ (succ n))) <a> (plus/plus-one-succ n)))
+  
+  (qed ((q/ex-intro (lambda [$ nat] (= (+ one $) (succ n))) n) <b>)))
 
 (definition <
   "The strict variant of [[<=]]."
