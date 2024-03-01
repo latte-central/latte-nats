@@ -139,4 +139,17 @@ Note that if `(<= m n)` then (- m n) is `zero`."
 (proof 'minus-succ
   (qed ((p/and-elim-right (minus-prop m)) n)))
 
+(defthm minus-one
+  [m nat]
+  (= (- m one) (pred m)))
 
+(proof 'minus-one
+  (have <a> (= (- m one) (pred (- m zero)))
+        :by (minus-succ m zero))
+  (have <b> (= (- m zero) m)
+        :by (minus-zero m))
+  (qed (eq/eq-subst (lambda [$ nat]
+                      (= (- m one) (pred $))) <b> <a>)))
+
+
+        
