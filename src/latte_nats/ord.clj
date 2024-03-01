@@ -1,7 +1,7 @@
 (ns latte-nats.ord
   "The oredering relation for natural numbers."
 
-  (:refer-clojure :exclude [and or not = + < <= > >=])
+  (:refer-clojure :exclude [and or not = + - < <= > >=])
 
   (:require [latte.core :as latte :refer [defaxiom defthm definition
                                           deflemma
@@ -19,6 +19,7 @@
             [latte-nats.core :as nats :refer [nat = <> zero succ one]]
             [latte-nats.rec :as rec]
             [latte-nats.plus :as plus :refer [+]]
+            [latte-nats.minus :as minus :refer [- pred]]
 
             ))
 
@@ -104,6 +105,18 @@
         :by (plus/plus-one-succ n))
 
   (qed ((q/ex-intro (lambda [$ nat] (= (+ n $) (succ n))) one) <a>)))
+
+
+(defthm le-zero-right
+  [n nat]
+  (==> (<= n zero)
+       (= n zero)))
+
+(proof 'le-zero-right
+  (assume [Hle (<= n zero)]
+    (have <a> (<= zero n) :by (le-zero n))
+    (have <b> (= n zero) :by ((le-antisym n zero) Hle <a>)))
+  (qed <b>))
 
 (defthm le-one
   [n nat]
@@ -213,6 +226,19 @@
           :by (p/and-elim-left Hmn)))
   (qed <a>))
 
+(defthm lt-le-ne
+  [[m n nat]]
+  (==> (<= m n)
+       (<> m n)
+       (< m n)))
+
+(proof 'lt-le-ne
+  (assume [Hle _
+           Hne _]
+    (have <a> (< m n) :by (p/and-intro Hle Hne)))
+  (qed <a>))
+
+
 (defthm lt-succ 
   [n nat]
   (< n (succ n)))
@@ -221,6 +247,16 @@
   (have <a> (<= n (succ n)) :by (le-succ n))
   (have <b> (<> n (succ n)) :by (nats/succ-not n))
   (qed (p/and-intro <a> <b>)))
+
+
+(comment 
+
+;; TODO
+(defthm lt-le-succ
+  [[m n nat]]
+  (==> (< m (succ n))
+       (<= m n)))
+)
 
 (defthm plus-le
   [[m nat] [n nat] [p nat]]
@@ -282,8 +318,80 @@
     (have <e> _ :by (q/ex-elim H <d>)))
 (qed <e>))
 
+(defthm le-pred
+  [n nat]
+  (<= (pred n) n))
 
+(proof 'le-pred
+  "Case analysis"
 
+  "Case 0"
+  (have <a1> (= zero (pred zero)) :by (eq/eq-sym (minus/pred-zero)))
+  (have <a2> (<= zero zero) :by (le-refl zero))
+  
+  (have <a> (<= (pred zero) zero)
+        :by (eq/eq-subst (lambda [$ nat] (<= $ zero)) <a1> <a2>))
 
+  "Case (succ n)"
+  (assume [n nat]
+    (have <b1> (= n (pred (succ n))) :by (eq/eq-sym (minus/pred-succ n)))
+    (have <b2> (<= n (succ n)) :by (le-succ n))
+    (have <b> (<= (pred (succ n)) (succ n))
+          :by (eq/eq-subst (lambda [$ nat]
+                             (<= $ (succ n))) <b1> <b2>)))
 
+  (qed ((nats/nat-case (lambda [n nat]
+                         (<= (pred n) n))) <a> <b> n)))
 
+(defthm lt-pred
+  [n nat]
+  (==> (<> n zero)
+       (< (pred n) n)))
+
+(proof 'lt-pred
+  (assume [Hnz (<> n zero)]
+    
+    (have <a> (<= (pred n) n) :by (le-pred n))
+    
+    (assume [Hcontra (= (pred n) n)]
+      (have <b1> (= n zero) :by ((minus/pred-eq-zero n) Hcontra))
+      (have <b> p/absurd :by (Hnz <b1>)))
+
+    (have <c> (< (pred n) n) :by (p/and-intro <a> <b>)))
+
+  (qed <c>))
+
+(comment
+
+  ;; TODO
+
+(defthm le-lt-pred
+  [[m n nat]]
+  (==> (< m n)
+       (<= m (pred n))))
+
+(try-proof 'le-lt-pred
+  "By case analysis on n"
+
+  "Case zero"
+  
+  (assume [H0 (< m zero)]
+    (have <a1> (<= m zero) :by ((lt-le m zero) H0))
+    (have <a2> (= m zero) :by ((le-zero-right m) <a1>))
+    (have <a3> p/absurd :by ((p/and-elim-right H0) <a2>))
+    (have <a> _ :by (<a3> (<= m (pred zero)))))
+
+  "Case (succ n)"
+
+  (assume [n nat
+           Hn (< m (succ n))]
+
+    "We have to show (<= m (pred (succ n)))"
+    
+    (have <b1> (= (pred (succ n)) n) :by (minus/pred-succ n))
+    
+
+)
+
+)
+)

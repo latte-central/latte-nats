@@ -17,7 +17,7 @@
 
             [latte-sets.quant :as sq :refer [forall-in]]
             
-            [latte-nats.core :as nats :refer [nat = <> zero succ one pred]]
+            [latte-nats.core :as nats :refer [nat = <> zero succ one]]
             [latte-nats.rec :as rec]
             [latte-nats.plus :as plus :refer [+]]
                        ))
@@ -86,8 +86,38 @@ the predecessor of zero occurs."
             :by (eq/eq-cong succ <b1>)))
     (have <b> (P (succ n)) :by <b2>))
 
-  (qed ((nat-case P) <a> <b> n)))
+  (qed ((nats/nat-case P) <a> <b> n)))
 
+(defthm pred-eq-zero
+  [n nat]
+  (==> (= (pred n) n)
+       (= n zero)))
+
+(proof 'pred-eq-zero
+  "By case analysis"
+
+  "Case zero"
+  
+  (assume [H0 (= (pred zero) zero)]
+    (have <a> (= zero zero) :by (eq/eq-refl zero)))
+
+  "Case (succ n)"
+
+  (assume [n nat
+           Hn (= (pred (succ n)) (succ n))]
+
+    "We have to show (= (succ n) zero), but we will exhibit a contradiction"
+
+    (have <b1> (= (pred (succ n)) n) :by (pred-succ n))
+    (have <b2> (= n (succ n)) 
+          :by (eq/eq-subst (lambda [$ nat] (= $ (succ n))) <b1> Hn))
+    (have <b3> p/absurd :by ((nats/succ-not n) <b2>))
+    
+    (have <b> _ :by (<b3> (= (succ n) zero))))
+
+  (qed ((nats/nat-case (lambda [n nat] (==> (= (pred n) n)
+                                            (= n zero)))) <a> <b> n)))
+    
 (definition sub-prop
   "The property of the subtraction of `m` by another natural number.
 Note that subtraction is not closed for natural numbers, so we
