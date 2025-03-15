@@ -107,6 +107,7 @@
   (qed ((q/ex-intro (lambda [$ nat] (= (+ n $) (succ n))) one) <a>)))
 
 
+
 (defthm le-zero-right
   [n nat]
   (==> (<= n zero)
@@ -248,7 +249,6 @@
   (have <b> (<> n (succ n)) :by (nats/succ-not n))
   (qed (p/and-intro <a> <b>)))
 
-
 (comment 
 
 ;; TODO
@@ -256,7 +256,46 @@
   [[m n nat]]
   (==> (< m (succ n))
        (<= m n)))
-)
+
+(try-proof 'lt-le-succ
+
+  (pose P := (lambda [k nat] (forall [n nat] (==> (< k (succ n))
+                                                  (<= k n)))))
+
+  "We prove P by induction (thought it was a simple case analysis !"
+
+  "Case (P zero)"
+
+  (assume [n nat
+           Hn (< zero (succ n))]
+    (have <a1> (<= zero n) :by (le-zero n)))
+
+  (have <a> (P zero) :by <a1>)
+
+  "Case (P (succ k))"
+
+  (assume [k nat
+           Hind (P k)]
+
+    (assume [n nat
+             Hn (< (succ k) (succ n))]
+
+      ;; from this we have (< k n)
+      ;; we want to show  (<= (succ k) n)
+
+  ;; we use our induction hyp with n=(pred n)
+  ;; (Pk (pred n)) :  (==> (< k (succ (pred n)))
+  ;;                       (<= k (pred n)))
+
+  ;; We have (< k (succ pred n))   <==>  (< k n)
+  ;; hence we obtain (<= k (pred n))
+
+  ;; hence (<= (succ k) (succ (pred n)))
+  ;; thus (<= (succ k) n)    as intended
+
+  ;; Qed !
+ 
+))))
 
 (defthm plus-le
   [[m nat] [n nat] [p nat]]
@@ -295,6 +334,22 @@
 
   (qed <h>))
 
+(defthm le-succ-congr
+  [[m nat] [n nat]]
+  (==> (<= (succ m) (succ n))
+       (<= m n)))
+
+(proof 'le-succ-congr
+  "We prove this as a corollary of le-plus"
+  (assume [H (<= (succ m) (succ n))]
+    (have <a> (= (succ m) (+ m one)) :by (eq/eq-sym (plus/plus-one-succ m)))
+    (have <b> (= (succ n) (+ n one)) :by (eq/eq-sym (plus/plus-one-succ n)))
+    (have <c> (<= (+ m one) (succ n)) :by (eq/rewrite H <a>))
+    (have <d> (<= (+ m one) (+ n one)) :by (eq/rewrite <c> <b>))
+    (have <e> (<= m n) :by ((plus-le m n one) <d>)))
+
+  (qed <e>))
+
 (defthm plus-le-conv
   "The converse of [[plus-le]]."
   [[m nat] [n nat] [p nat]]
@@ -317,6 +372,22 @@
             :by ((q/ex-intro (lambda [k nat] (= (+ (+ m p) k) (+ n p))) k) <c>)))
     (have <e> _ :by (q/ex-elim H <d>)))
 (qed <e>))
+
+(defthm le-succ-congr-conv
+  [[m nat] [n nat]]
+  (==> (<= m n)
+       (<= (succ m) (succ n))))
+
+(proof 'le-succ-congr-conv
+  "We prove this as a corollary of le-plus-conv"
+  (assume [H (<= m n)]
+    (have <a> (<= (+ m one) (+ n one))
+          :by ((plus-le-conv m n one) H))
+    (have <b> (= (+ m one) (succ m)) :by (plus/plus-one-succ m))
+    (have <c> (<= (succ m) (+ n one)) :by (eq/rewrite <a> <b>))
+    (have <d> (= (+ n one) (succ n)) :by (plus/plus-one-succ n))
+    (have <e> (<= (succ m) (succ n)) :by (eq/rewrite <c> <d>)))
+  (qed <e>))
 
 (defthm le-pred
   [n nat]
@@ -361,6 +432,19 @@
 
   (qed <c>))
 
+(comment ;;TODO
+(defthm lt-succ-congr
+  [[m nat] [n nat]]
+  (==> (< (succ m) (succ n))
+       (< m n)))
+
+(try-proof 'lt-succ-congr
+  (assume [Hlt (< (succ m) (succ n))]
+))
+
+)
+
+
 (comment
 
   ;; TODO
@@ -390,8 +474,10 @@
     
     (have <b1> (= (pred (succ n)) n) :by (minus/pred-succ n))
     
+    (have <b2> (< m (succ (pred (succ n))))
+          :by (eq/eq-subst (lambda [$ nat] (< m (succ $))) (eq/eq-sym <b1>) Hn))
 
-)
+    
 
-)
-)
+
+)))
