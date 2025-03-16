@@ -249,53 +249,7 @@
   (have <b> (<> n (succ n)) :by (nats/succ-not n))
   (qed (p/and-intro <a> <b>)))
 
-(comment 
 
-;; TODO
-(defthm lt-le-succ
-  [[m n nat]]
-  (==> (< m (succ n))
-       (<= m n)))
-
-(try-proof 'lt-le-succ
-
-  (pose P := (lambda [k nat] (forall [n nat] (==> (< k (succ n))
-                                                  (<= k n)))))
-
-  "We prove P by induction (thought it was a simple case analysis !"
-
-  "Case (P zero)"
-
-  (assume [n nat
-           Hn (< zero (succ n))]
-    (have <a1> (<= zero n) :by (le-zero n)))
-
-  (have <a> (P zero) :by <a1>)
-
-  "Case (P (succ k))"
-
-  (assume [k nat
-           Hind (P k)]
-
-    (assume [n nat
-             Hn (< (succ k) (succ n))]
-
-      ;; from this we have (< k n)
-      ;; we want to show  (<= (succ k) n)
-
-  ;; we use our induction hyp with n=(pred n)
-  ;; (Pk (pred n)) :  (==> (< k (succ (pred n)))
-  ;;                       (<= k (pred n)))
-
-  ;; We have (< k (succ pred n))   <==>  (< k n)
-  ;; hence we obtain (<= k (pred n))
-
-  ;; hence (<= (succ k) (succ (pred n)))
-  ;; thus (<= (succ k) n)    as intended
-
-  ;; Qed !
- 
-))))
 
 (defthm plus-le
   [[m nat] [n nat] [p nat]]
@@ -432,17 +386,99 @@
 
   (qed <c>))
 
-(comment ;;TODO
 (defthm lt-succ-congr
   [[m nat] [n nat]]
   (==> (< (succ m) (succ n))
        (< m n)))
 
-(try-proof 'lt-succ-congr
+(proof 'lt-succ-congr
   (assume [Hlt (< (succ m) (succ n))]
-))
+    (have <a1> (<= (succ m) (succ n)) :by (p/and-elim-left Hlt))
+    (have <a> (<= m n) :by ((le-succ-congr m n) <a1>))
+    (assume [Hcontra (= m n)]
+      (have <b1> (= (succ m) (succ n)) :by (eq/eq-cong succ Hcontra))
+      (have <b2> (not (= (succ m) (succ n))) :by (p/and-elim-right Hlt))
+      (have <b> p/absurd :by (<b2> <b1>)))
+    (have <c> (< m n) :by (p/and-intro <a> <b>)))
+  (qed <c>))
 
-)
+
+(defthm lt-ne-zero 
+  [[m n nat]]
+  (==> (< m n)
+       (<> n zero)))
+
+(proof 'lt-ne-zero
+  (assume [Hlt (< m n)]
+    (assume [Hcontra (= n zero)]
+      (have <a> (<= m n) :by (p/and-elim-left Hlt))
+      (have <b> (<= m zero) :by (eq/rewrite <a> Hcontra))
+      (have <c> (= m zero) :by ((le-zero-right m) <b>))
+      (have <d> (<> m n) :by (p/and-elim-right Hlt))
+      (have <e> (= m n) :by (eq/rewrite <c> (eq/eq-sym Hcontra)))
+      (have <f> p/absurd :by (<d> <e>))))
+  (qed <f>))
+
+;; TODO
+(defthm lt-le-succ
+  [[m n nat]]
+  (==> (< m (succ n))
+       (<= m n)))
+
+(proof 'lt-le-succ
+
+  (pose P := (lambda [k nat] (forall [n nat] (==> (< k (succ n))
+                                                  (<= k n)))))
+
+  "We prove P by induction (thought it was a simple case analysis !"
+
+  "Case (P zero)"
+
+  (assume [n nat
+           Hn (< zero (succ n))]
+    (have <a1> (<= zero n) :by (le-zero n)))
+
+  (have <a> (P zero) :by <a1>)
+
+  "Case (P (succ k))"
+
+  (assume [k nat
+           Hind (P k)]
+
+    (assume [n nat
+             Hn (< (succ k) (succ n))]
+
+      (have <b1> (< k n) :by ((lt-succ-congr k n) Hn))
+
+      (have <b2> (<> n zero) :by ((lt-ne-zero k n) <b1>))
+
+      "We have to show  (<= (succ k) n)"
+      "We use our induction hyp with n=(pred n)"
+
+      (have <b3> (==> (< k (succ (pred n)))
+                      (<= k (pred n))) :by (Hind (pred n)))
+
+      (have <b4> (= (succ (pred n)) n) 
+            :by ((minus/succ-pred-succ n) <b2>))
+
+      (have <b5> (==> (< k n)
+                      (<= k (pred n))) :by (eq/rewrite <b3> <b4>))
+
+      (have <b6> (<= k (pred n)) :by (<b5> <b1>))
+
+      (have <b7> (<= (succ k) (succ (pred n))) :by ((le-succ-congr-conv k (pred n)) <b6>))
+      
+      (have <b8> (<= (succ k) n) :by (eq/rewrite <b7> <b4>)))
+
+      (have <b> (P (succ k)) :by <b8>))
+
+  (have <c> (forall [n nat] (P n)) :by ((nats/nat-induct P) <a> <b>))
+
+  ;; recall the main hypothesis
+  (assume [H (< m (succ n))]
+    (have <d> (<= m n) :by ((<c> m n) H)))
+
+  (qed <d>))
 
 
 (comment
