@@ -1,5 +1,5 @@
 (ns latte-nats.ord
-  "The oredering relation for natural numbers."
+  "The ordering relation for natural numbers."
 
   (:refer-clojure :exclude [and or not = + - < <= > >=])
 
@@ -419,7 +419,6 @@
       (have <f> p/absurd :by (<d> <e>))))
   (qed <f>))
 
-;; TODO
 (defthm lt-le-succ
   [[m n nat]]
   (==> (< m (succ n))
@@ -480,40 +479,18 @@
 
   (qed <d>))
 
-
-(comment
-
-  ;; TODO
-
-(defthm le-lt-pred
+(defthm lt-le-pred
   [[m n nat]]
   (==> (< m n)
        (<= m (pred n))))
 
-(try-proof 'le-lt-pred
-  "By case analysis on n"
-
-  "Case zero"
-  
-  (assume [H0 (< m zero)]
-    (have <a1> (<= m zero) :by ((lt-le m zero) H0))
-    (have <a2> (= m zero) :by ((le-zero-right m) <a1>))
-    (have <a3> p/absurd :by ((p/and-elim-right H0) <a2>))
-    (have <a> _ :by (<a3> (<= m (pred zero)))))
-
-  "Case (succ n)"
-
-  (assume [n nat
-           Hn (< m (succ n))]
-
-    "We have to show (<= m (pred (succ n)))"
-    
-    (have <b1> (= (pred (succ n)) n) :by (minus/pred-succ n))
-    
-    (have <b2> (< m (succ (pred (succ n))))
-          :by (eq/eq-subst (lambda [$ nat] (< m (succ $))) (eq/eq-sym <b1>) Hn))
-
-    
+(proof 'le-lt-pred
+  (assume [Hlt (< m n)]
+    (have <a> (<> n zero) :by ((lt-ne-zero m n) Hlt))
+    (have <b> (= (succ (pred n)) n) :by ((minus/succ-pred-succ n) <a>))
+    (have <c> (< m (succ (pred n))) :by (eq/rewrite Hlt (eq/eq-sym <b>)))
+    (have <d> (<= m (pred n)) :by ((lt-le-succ m (pred n)) <c>)))
+  (qed <d>))
 
 
-)))
+
