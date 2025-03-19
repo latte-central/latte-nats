@@ -484,13 +484,15 @@
   (==> (< m n)
        (<= m (pred n))))
 
-(proof 'le-lt-pred
+(proof 'lt-le-pred
   (assume [Hlt (< m n)]
     (have <a> (<> n zero) :by ((lt-ne-zero m n) Hlt))
     (have <b> (= (succ (pred n)) n) :by ((minus/succ-pred-succ n) <a>))
     (have <c> (< m (succ (pred n))) :by (eq/rewrite Hlt (eq/eq-sym <b>)))
     (have <d> (<= m (pred n)) :by ((lt-le-succ m (pred n)) <c>)))
   (qed <d>))
+
+
 
 
 
