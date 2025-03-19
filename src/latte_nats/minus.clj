@@ -117,7 +117,22 @@ the predecessor of zero occurs."
 
   (qed ((nats/nat-case (lambda [n nat] (==> (= (pred n) n)
                                             (= n zero)))) <a> <b> n)))
-    
+
+(defthm pred-neq 
+  [n nat]
+  (==> (<> n zero)
+       (<> (pred n) n)))
+
+(proof 'pred-neq
+  (assume [Hnz (<> n zero)]
+    (assume [Hcontra (= (pred n) n)]
+      (have <a> (= n zero) :by ((pred-eq-zero n) Hcontra))
+      (have <b> p/absurd :by (Hnz <a>)))
+    (have <c> (<> (pred n) n) :by <b>))
+
+  (qed <c>))
+
+   
 (definition sub-prop
   "The property of the subtraction of `m` by another natural number.
 Note that subtraction is not closed for natural numbers, so we

@@ -492,6 +492,48 @@
     (have <d> (<= m (pred n)) :by ((lt-le-succ m (pred n)) <c>)))
   (qed <d>))
 
+(defthm not-le-pred
+  [n nat]
+  (==> (<> n zero)
+       (not (<= n (pred n)))))
+
+(proof 'not-le-pred
+  (assume [hz (<> n zero)]
+    (assume [Hcontra (<= n (pred n))]
+      (have <a> (<= (pred n) n) :by (le-pred n))
+      (have <b> (= n (pred n)) :by ((le-antisym n (pred n)) Hcontra <a>))
+      (have <c> (<> (pred n) n) :by ((minus/pred-neq n) hz))
+      (have <d> p/absurd :by (<c> (eq/eq-sym <b>))))
+
+    (have <e> (not (<= n (pred n))) :by <d>))
+
+  (qed <e>))
+
+
+(defthm le-pred-lt
+  [[m n nat]]
+  (==> (<= m (pred n))
+       (<> n zero)
+       (< m n)))
+
+(proof 'le-pred-lt
+  (assume [Hle (<= m (pred n))
+           Hnt (<> n zero)]
+    (have <a1> (<= (pred n) n) :by (le-pred n))
+    (have <a> (<= m n) :by ((le-trans m (pred n) n) Hle <a1>))
+
+    (assume [Hcontra (= m n)]
+      (have <b1> (<= n (pred n)) :by (eq/rewrite Hle Hcontra))
+      (have <b2> (= (pred n) n) :by ((le-antisym (pred n) n) <a1> <b1>))
+      (have <b3> (<> (pred n) n) :by ((minus/pred-neq n) Hnt))
+      (have <b> p/absurd :by (<b3> <b2>)))
+
+    (have <c> (< m n) :by (p/and-intro <a> <b>)))
+
+  (qed <c>))
+
+
+  
 
 
 
